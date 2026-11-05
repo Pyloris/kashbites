@@ -1,0 +1,8 @@
+{
+  "name": "KashBites - A Taste of Kashmir | Premium Dry Fruits",
+  "description": "Authentic Kashmir-origin dry fruits, walnuts, almonds, dried apricots, and signature gift hampers sourced directly from Himalayan growers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
