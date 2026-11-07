@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext.js';
+import { useAuth } from '../../context/AuthContext.js';
 import { submitOrder } from '../../services/api.js';
 import { IOrder, IShippingAddress } from '../../types/index.js';
-import { X, CheckCircle2, ShieldCheck, Truck, CreditCard, Banknote, QrCode } from 'lucide-react';
+import { X, CheckCircle2, ShieldCheck, Truck, CreditCard, Banknote, QrCode, MapPin } from 'lucide-react';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -16,16 +17,40 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   onOrderSuccess,
 }) => {
   const { items, subtotal, discount, shippingFee, total, couponCode, clearCart } = useCart();
+  const { user } = useAuth();
 
   const [address, setAddress] = useState<IShippingAddress>({
-    fullName: '',
-    phone: '',
+    fullName: user?.name || '',
+    phone: user?.phone || '',
     addressLine1: '',
     addressLine2: '',
-    city: '',
-    state: 'Delhi',
-    pincode: '',
+    city: 'Srinagar',
+    state: 'Jammu & Kashmir',
+    pincode: '190001',
   });
+
+  useEffect(() => {
+    if (user && user.addresses.length > 0) {
+      const defaultAddr = user.addresses.find((a) => a.isDefault) || user.addresses[0];
+      if (defaultAddr) {
+        setAddress({
+          fullName: defaultAddr.fullName,
+          phone: defaultAddr.phone,
+          addressLine1: defaultAddr.addressLine1,
+          addressLine2: defaultAddr.addressLine2,
+          city: defaultAddr.city,
+          state: defaultAddr.state,
+          pincode: defaultAddr.pincode,
+        });
+      }
+    } else if (user) {
+      setAddress((prev) => ({
+        ...prev,
+        fullName: user.name,
+        phone: user.phone,
+      }));
+    }
+  }, [user, isOpen]);
 
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'UPI' | 'CARD'>('COD');
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Logo } from '../common/Logo.js';
 import { useCart } from '../../context/CartContext.js';
-import { Search, ShoppingBag, UserCheck, Sparkles, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext.js';
+import { Search, ShoppingBag, UserCheck, Sparkles, X, User } from 'lucide-react';
 
 interface NavbarProps {
   onNavigate: (view: string, param?: string) => void;
@@ -19,6 +20,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
 }) => {
   const { totalItemsCount, setIsCartOpen } = useCart();
+  const { user, isAuthenticated, setIsAuthModalOpen } = useAuth();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   return (
@@ -116,15 +118,43 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
-            {/* Track Orders / Verification */}
+            {/* Track Orders */}
             <button
               onClick={onOpenTracking}
               className="p-2 text-[#2D4534] hover:text-[#0E331E] hover:bg-[#EFE6D5] rounded-full transition-colors flex items-center gap-1.5 text-xs font-medium"
               title="Track Order / Batch Verification"
             >
               <UserCheck className="w-4 h-4 text-[#143E26]" />
-              <span className="hidden md:inline">Track Order</span>
+              <span className="hidden md:inline">Track</span>
             </button>
+
+            {/* Profile or Login Button */}
+            {!isAuthenticated ? (
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#143E26]/40 hover:border-[#143E26] bg-white hover:bg-[#EAF2EC] text-[#143E26] font-bold text-xs transition-all shadow-xs"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onNavigate('profile')}
+                title="My KashBites Profile"
+                className={`flex items-center gap-2 p-1 pl-2 pr-2.5 rounded-full transition-all border ${
+                  currentView === 'profile'
+                    ? 'bg-[#143E26] text-[#FAF7F2] border-[#DFB248] shadow-xs'
+                    : 'bg-[#EAF2EC] hover:bg-[#D9E7DC] border-[#143E26]/30 text-[#143E26]'
+                }`}
+              >
+                <div className="w-6 h-6 rounded-full bg-[#143E26] text-[#DFB248] font-bold text-[10px] flex items-center justify-center font-serif-brand">
+                  {user?.name ? user.name.slice(0, 1).toUpperCase() : 'U'}
+                </div>
+                <span className="text-xs font-bold hidden sm:inline max-w-[80px] truncate">
+                  {user?.name ? user.name.split(' ')[0] : 'Profile'}
+                </span>
+              </button>
+            )}
 
             {/* Shopping Bag CTA */}
             <button

@@ -99,3 +99,34 @@ export interface IOrder {
   total: number;
   createdAt: string;
 }
+
+export interface IUserAddress {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+export interface IUser {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatar?: string;
+  memberTier: string;
+  chinarPoints: number;
+  addresses: IUserAddress[];
+  notifications: {
+    smsAlerts: boolean;
+    whatsappAlerts: boolean;
+    harvestNewsletter: boolean;
+  };
+  createdAt: string;
+}
+

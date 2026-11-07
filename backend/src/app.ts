@@ -3,6 +3,7 @@ import cors from 'cors';
 import productRoutes from './routes/productRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import { connectDB, getDBStatus } from './config/db.js';
 
 export const createApp = (): Express => {
@@ -31,6 +32,7 @@ export const createApp = (): Express => {
   app.use('/api', productRoutes);
   app.use('/api', orderRoutes);
   app.use('/api', reviewRoutes);
+  app.use('/api', authRoutes);
 
   return app;
 };

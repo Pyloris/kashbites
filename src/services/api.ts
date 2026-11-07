@@ -115,3 +115,94 @@ export const fetchOrders = async (): Promise<IOrder[]> => {
     return [];
   }
 };
+
+// ================= USER & AUTHENTICATION APIS =================
+
+export const loginApi = async (email: string, password: string) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    return { success: false, message: 'Network error during login' };
+  }
+};
+
+export const registerApi = async (name: string, email: string, phone: string, password: string) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, password }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    return { success: false, message: 'Network error during registration' };
+  }
+};
+
+export const getMeApi = async (token: string) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    return data.data || null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const updateProfileApi = async (userData: any) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/profile`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: 'Failed to update profile' };
+  }
+};
+
+export const addAddressApi = async (userId: string, address: any) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/addresses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, address }),
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: 'Failed to add address' };
+  }
+};
+
+export const deleteAddressApi = async (userId: string, addressId: string) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/addresses/${userId}/${addressId}`, {
+      method: 'DELETE',
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: 'Failed to delete address' };
+  }
+};
+
+export const setDefaultAddressApi = async (userId: string, addressId: string) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/addresses/${userId}/${addressId}/default`, {
+      method: 'PUT',
+    });
+    return await res.json();
+  } catch (error) {
+    return { success: false, message: 'Failed to set default address' };
+  }
+};
+

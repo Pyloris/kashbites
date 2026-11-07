@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { CartProvider } from './context/CartContext.js';
+import { AuthProvider } from './context/AuthContext.js';
 import { Navbar } from './components/layout/Navbar.js';
 import { Footer } from './components/layout/Footer.js';
 import { HomePage } from './pages/HomePage.js';
 import { ProductDetailPage } from './components/product/ProductDetailPage.js';
+import { UserProfilePage } from './pages/UserProfilePage.js';
 import { CartDrawer } from './components/modals/CartDrawer.js';
 import { CheckoutModal } from './components/modals/CheckoutModal.js';
 import { OrderTrackingModal } from './components/modals/OrderTrackingModal.js';
+import { AuthModal } from './components/modals/AuthModal.js';
 import { fetchProductById } from './services/api.js';
 import { IProduct, IOrder } from './types/index.js';
 
 export function AppContent() {
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'catalog'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'catalog' | 'profile'>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,6 +41,9 @@ export function AppContent() {
     if (view === 'home') {
       setCurrentView('home');
       setSelectedProductId(null);
+    } else if (view === 'profile') {
+      setCurrentView('profile');
+      setSelectedProductId(null);
     } else if (view === 'catalog') {
       setCurrentView('home');
       const el = document.getElementById('products-section');
@@ -63,7 +69,17 @@ export function AppContent() {
 
       {/* Main Page Content */}
       <main className="flex-1">
-        {currentView === 'product' && selectedProduct ? (
+        {currentView === 'profile' ? (
+          <UserProfilePage
+            onBackToShop={() => {
+              setCurrentView('home');
+            }}
+            onTrackOrder={(orderNum) => {
+              setTrackedOrderNumber(orderNum);
+              setIsTrackingOpen(true);
+            }}
+          />
+        ) : currentView === 'product' && selectedProduct ? (
           <ProductDetailPage
             product={selectedProduct}
             onBack={() => {
@@ -101,14 +117,18 @@ export function AppContent() {
         onClose={() => setIsTrackingOpen(false)}
         initialOrderNumber={trackedOrderNumber}
       />
+
+      <AuthModal />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <AppContent />
+      </CartProvider>
+    </AuthProvider>
   );
 }
