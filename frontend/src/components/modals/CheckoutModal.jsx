@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
-import { submitOrder } from '../../services/api.js';
+import { useSubmitOrderMutation } from '../../services/orders.api.js';
 import { X, CheckCircle2, ShieldCheck, Truck, CreditCard, Banknote, QrCode } from 'lucide-react';
+
 export const CheckoutModal = ({ isOpen, onClose, onOrderSuccess, }) => {
     const { items, subtotal, discount, shippingFee, total, couponCode, clearCart } = useCart();
     const { user } = useAuth();
+    const [submitOrderMutation] = useSubmitOrderMutation();
     const [address, setAddress] = useState({
         fullName: user?.name || '',
         phone: user?.phone || '',
@@ -51,12 +53,12 @@ export const CheckoutModal = ({ isOpen, onClose, onOrderSuccess, }) => {
         }
         setIsSubmitting(true);
         try {
-            const order = await submitOrder({
+            const order = await submitOrderMutation({
                 items,
                 shippingAddress: address,
                 paymentMethod,
                 couponCode,
-            });
+            }).unwrap();
             if (order) {
                 setCompletedOrder(order);
                 clearCart();

@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { fetchOrders } from '../../services/api.js';
+import { useGetOrdersQuery } from '../../services/orders.api.js';
 import { X, Search, CheckCircle2, MapPin } from 'lucide-react';
+
 export const OrderTrackingModal = ({ isOpen, onClose, initialOrderNumber, }) => {
-    const [orders, setOrders] = useState([]);
+    const { data: orders = [] } = useGetOrdersQuery(undefined, { skip: !isOpen });
     const [searchTerm, setSearchTerm] = useState(initialOrderNumber || '');
     const [selectedOrder, setSelectedOrder] = useState(null);
+
     useEffect(() => {
-        if (isOpen) {
-            fetchOrders().then((data) => {
-                setOrders(data);
-                if (data.length > 0) {
-                    const matched = initialOrderNumber
-                        ? data.find((o) => o.orderNumber === initialOrderNumber)
-                        : data[0];
-                    setSelectedOrder(matched || data[0]);
-                }
-            });
+        if (isOpen && orders.length > 0) {
+            const matched = initialOrderNumber
+                ? orders.find((o) => o.orderNumber === initialOrderNumber)
+                : orders[0];
+            setSelectedOrder((prev) => (prev ? prev : (matched || orders[0])));
         }
-    }, [isOpen, initialOrderNumber]);
+    }, [isOpen, orders, initialOrderNumber]);
+
     if (!isOpen)
         return null;
     const handleSearch = (e) => {
@@ -73,85 +71,71 @@ export const OrderTrackingModal = ({ isOpen, onClose, initialOrderNumber, }) => 
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          
-          {/* Search bar */}
+        <div className="p-5 sm:p-6 space-y-6 overflow-y-auto">
+          {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#9C8F7A] absolute left-3 top-3"/>
-              <input type="text" placeholder="Enter Order ID (e.g. KB-88219)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-[#D5CABB] bg-white uppercase font-mono tracking-wider outline-none focus:border-[#143E26]"/>
+              <Search className="w-4 h-4 absolute left-3 top-3 text-[#5B6E60]"/>
+              <input type="text" placeholder="Enter Order # (e.g. KB-8273)" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-[#E8DEC8] rounded-xl focus:outline-none focus:border-[#103822]"/>
             </div>
-            <button type="submit" className="px-4 py-2.5 rounded-xl bg-[#143E26] text-white text-xs font-bold hover:bg-[#0D2D1B]">
-              Track
+            <button type="submit" className="px-4 py-2 bg-[#103822] text-white text-xs font-bold rounded-xl hover:bg-[#0a2315] transition-colors cursor-pointer">
+              Find Order
             </button>
           </form>
 
           {selectedOrder ? (<div className="space-y-6">
-              {/* Order Meta Box */}
-              <div className="bg-white p-4 rounded-xl border border-[#E6DECF] text-xs">
-                <div className="flex justify-between items-start pb-2 mb-2 border-b border-[#EFE8DC]">
-                  <div>
-                    <span className="text-[#8C9C90] block">Order Tracking ID:</span>
-                    <strong className="font-mono text-base text-[#143E26]">
-                      {selectedOrder.orderNumber}
-                    </strong>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[#8C9C90] block">Total Amount:</span>
-                    <strong className="font-mono text-sm text-[#0E331E]">
-                      ₹{selectedOrder.total} ({selectedOrder.paymentMethod})
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-[#4F6354]">
-                  <MapPin className="w-3.5 h-3.5 text-[#C59432] shrink-0"/>
-                  <span>
-                    Destination: {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} ({selectedOrder.shippingAddress.pincode})
+              {/* Order Quick Specs */}
+              <div className="bg-[#F2ECE1] p-4 rounded-xl border border-[#C59432]/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#103822]">
+                    Order #{selectedOrder.orderNumber}
+                  </span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[#103822] text-[#DFB248]">
+                    Status: {selectedOrder.orderStatus}
                   </span>
                 </div>
+
+                <div className="text-[11px] text-[#5B6E60] flex items-center justify-between pt-1 border-t border-[#C59432]/20">
+                  <span>Destination: {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state}</span>
+                  <span>Courier: Air Cargo Express</span>
+                </div>
               </div>
 
-              {/* Step Tracking Timeline */}
-              <div>
-                <h4 className="font-serif-brand text-base font-bold text-[#0E331E] mb-4">
-                  Harvest & Delivery Journey
+              {/* Progress Milestones */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#103822]">
+                  Freshness & Handling Journey
                 </h4>
 
-                <div className="space-y-4 relative before:absolute before:inset-0 before:left-3 before:w-0.5 before:bg-[#E2D8C7] before:z-0">
-                  {stages.map((st, idx) => (<div key={idx} className="relative z-10 flex items-start gap-3.5 text-xs">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-white ${st.done
-                    ? 'bg-[#2D7A46] shadow-xs ring-4 ring-[#FAF7F2]'
-                    : 'bg-[#C5BBAA] ring-4 ring-[#FAF7F2]'}`}>
-                        {st.done ? (<CheckCircle2 className="w-4 h-4"/>) : (<span className="text-[10px] font-bold">{idx + 1}</span>)}
+                <div className="relative pl-6 space-y-5 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#C59432]/40">
+                  {stages.map((st, i) => (<div key={i} className="relative">
+                      <div className={`absolute -left-6 top-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center bg-white ${st.done ? 'border-[#103822] text-[#103822]' : 'border-gray-300 text-transparent'}`}>
+                        <div className={`w-2 h-2 rounded-full ${st.done ? 'bg-[#103822]' : 'bg-transparent'}`}/>
                       </div>
-
-                      <div className="pt-0.5">
-                        <h5 className={`font-bold ${st.done ? 'text-[#0E331E]' : 'text-[#8C9C90]'}`}>
-                          {st.title}
-                        </h5>
-                        <p className="text-[#5B6E60] text-[11px] mt-0.5">{st.desc}</p>
-                      </div>
+                      <h5 className={`text-xs font-bold ${st.done ? 'text-[#103822]' : 'text-gray-400'}`}>
+                        {st.title}
+                      </h5>
+                      <p className="text-[11px] text-[#5B6E60]">{st.desc}</p>
                     </div>))}
                 </div>
               </div>
 
-              {/* Items List */}
-              <div className="bg-[#FAF4E6] p-4 rounded-xl border border-[#E5D7BE] text-xs">
-                <span className="font-bold text-[#645028] block mb-2">Package Contents:</span>
-                <div className="space-y-1">
-                  {selectedOrder.items.map((it, i) => (<div key={i} className="flex justify-between text-[#3C4D40]">
-                      <span>{it.quantity}x {it.name} ({it.weight})</span>
-                      <span className="font-mono">₹{it.price * it.quantity}</span>
-                    </div>))}
+              {/* Delivery Destination Snippet */}
+              <div className="p-4 bg-white rounded-xl border border-[#E8DEC8] flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-[#C59432] shrink-0 mt-0.5"/>
+                <div className="text-xs">
+                  <span className="font-bold text-[#103822] block">
+                    Shipping to: {selectedOrder.shippingAddress.fullName}
+                  </span>
+                  <p className="text-[#5B6E60] text-[11px] mt-0.5">
+                    {selectedOrder.shippingAddress.addressLine1}, {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} - {selectedOrder.shippingAddress.pincode}
+                  </p>
                 </div>
               </div>
-            </div>) : (<div className="text-center py-8 text-xs text-[#7A8E7F]">
-              No order found with that ID. Enter an order number like KB-88219.
+            </div>) : (<div className="text-center py-8 text-xs text-[#5B6E60]">
+              No order found matching "{searchTerm}". Please check your order confirmation email or SMS.
             </div>)}
-
         </div>
-
       </div>
     </div>);
 };

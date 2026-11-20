@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext, useSearchParams } from 'react-router-dom';
-import { fetchProducts, fetchCategories } from '../services/api.js';
+import { useGetProductsQuery, useGetCategoriesQuery } from '../services/products.api.js';
 import { HeroBanner } from '../components/home/HeroBanner.jsx';
 import { TrustSection } from '../components/home/TrustSection.jsx';
 import { CategoryBar } from '../components/home/CategoryBar.jsx';
@@ -18,10 +18,7 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
 
   const urlCategory = searchParams.get('category');
   const [selectedCategory, setSelectedCategory] = useState(urlCategory || 'all');
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [sortBy, setSortBy] = useState('featured');
-  const [isLoading, setIsLoading] = useState(true);
 
   // Sync category state when URL query parameter changes
   useEffect(() => {
@@ -30,21 +27,12 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
     }
   }, [urlCategory]);
 
-  useEffect(() => {
-    setIsLoading(true);
-    Promise.all([
-      fetchProducts({
-        category: selectedCategory,
-        search: effectiveSearchQuery,
-        sort: sortBy,
-      }),
-      fetchCategories(),
-    ]).then(([prodData, catData]) => {
-      setProducts(prodData);
-      setCategories(catData);
-      setIsLoading(false);
-    });
-  }, [selectedCategory, sortBy, effectiveSearchQuery]);
+  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: products = [], isLoading } = useGetProductsQuery({
+    category: selectedCategory,
+    search: effectiveSearchQuery,
+    sort: sortBy,
+  });
 
   const signatureProduct = products.find((p) => p.slug === 'signature-collection-emerald-box') || products[0];
 

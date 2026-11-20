@@ -1,8 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginApi, registerApi, getMeApi, updateProfileApi, addAddressApi, deleteAddressApi, setDefaultAddressApi, } from '../services/api.js';
+import {
+    useLoginMutation,
+    useRegisterMutation,
+    useGetMeQuery,
+    useUpdateProfileMutation,
+    useAddAddressMutation,
+    useDeleteAddressMutation,
+    useSetDefaultAddressMutation,
+} from '../services/auth.api.js';
+
 const AuthContext = createContext(undefined);
+
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
     const [token, setToken] = useState(() => {
         try {
             return localStorage.getItem('kashbites_auth_token');
@@ -11,119 +20,163 @@ export const AuthProvider = ({ children }) => {
             return null;
         }
     });
-    const [isLoading, setIsLoading] = useState(true);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+    const {
+        data: profileUser,
+        isLoading: isGetMeLoading,
+        isError: isGetMeError,
+    } = useGetMeQuery(undefined, { skip: !token });
+
+    const [user, setUser] = useState(null);
+
     useEffect(() => {
-        const initAuth = async () => {
-            if (token) {
-                try {
-                    const profile = await getMeApi(token);
-                    if (profile) {
-                        setUser(profile);
-                    }
-                    else {
-                        localStorage.removeItem('kashbites_auth_token');
-                        setToken(null);
-                    }
-                }
-                catch {
-                    localStorage.removeItem('kashbites_auth_token');
-                    setToken(null);
-                }
-            }
-            setIsLoading(false);
-        };
-        initAuth();
-    }, [token]);
+        if (profileUser) {
+            setUser(profileUser);
+        } else if (isGetMeError) {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem('kashbites_auth_token');
+        } else if (!token) {
+            setUser(null);
+        }
+    }, [profileUser, isGetMeError, token]);
+
+    const isLoading = Boolean(token) && isGetMeLoading && !user;
+
+    const [loginMutation] = useLoginMutation();
+    const [registerMutation] = useRegisterMutation();
+    const [updateProfileMutation] = useUpdateProfileMutation();
+    const [addAddressMutation] = useAddAddressMutation();
+    const [deleteAddressMutation] = useDeleteAddressMutation();
+    const [setDefaultAddressMutation] = useSetDefaultAddressMutation();
+
     const login = async (email, password) => {
-        const res = await loginApi(email, password);
-        if (res.success && res.data) {
-            setUser(res.data);
-            setToken(res.token);
-            localStorage.setItem('kashbites_auth_token', res.token);
-            setIsAuthModalOpen(false);
-            return { success: true };
+        try {
+            const res = await loginMutation({ email, password }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                setToken(res.token);
+                localStorage.setItem('kashbites_auth_token', res.token);
+                setIsAuthModalOpen(false);
+                return { success: true };
+            }
+            return { success: false, message: res.message || 'Login failed' };
+        } catch (err) {
+            return { success: false, message: err?.data?.message || err?.message || 'Login failed' };
         }
-        return { success: false, message: res.message || 'Login failed' };
     };
+
     const register = async (name, email, phone, password) => {
-        const res = await registerApi(name, email, phone, password);
-        if (res.success && res.data) {
-            setUser(res.data);
-            setToken(res.token);
-            localStorage.setItem('kashbites_auth_token', res.token);
-            setIsAuthModalOpen(false);
-            return { success: true };
+        try {
+            const res = await registerMutation({ name, email, phone, password }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                setToken(res.token);
+                localStorage.setItem('kashbites_auth_token', res.token);
+                setIsAuthModalOpen(false);
+                return { success: true };
+            }
+            return { success: false, message: res.message || 'Registration failed' };
+        } catch (err) {
+            return { success: false, message: err?.data?.message || err?.message || 'Registration failed' };
         }
-        return { success: false, message: res.message || 'Registration failed' };
     };
+
     const logout = () => {
         setUser(null);
         setToken(null);
         localStorage.removeItem('kashbites_auth_token');
     };
+
     const updateProfile = async (userData) => {
         if (!user)
             return false;
-        const res = await updateProfileApi({ id: user._id, email: user.email, ...userData });
-        if (res.success && res.data) {
-            setUser(res.data);
-            return true;
+        try {
+            const res = await updateProfileMutation({ id: user._id, email: user.email, ...userData }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
         }
-        return false;
     };
+
     const addAddress = async (address) => {
         if (!user)
             return false;
-        const res = await addAddressApi(user._id, address);
-        if (res.success && res.data) {
-            setUser(res.data);
-            return true;
+        try {
+            const res = await addAddressMutation({ userId: user._id, address }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
         }
-        return false;
     };
+
     const deleteAddress = async (addressId) => {
         if (!user)
             return false;
-        const res = await deleteAddressApi(user._id, addressId);
-        if (res.success && res.data) {
-            setUser(res.data);
-            return true;
+        try {
+            const res = await deleteAddressMutation({ userId: user._id, addressId }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
         }
-        return false;
     };
+
     const setDefaultAddress = async (addressId) => {
         if (!user)
             return false;
-        const res = await setDefaultAddressApi(user._id, addressId);
-        if (res.success && res.data) {
-            setUser(res.data);
-            return true;
+        try {
+            const res = await setDefaultAddressMutation({ userId: user._id, addressId }).unwrap();
+            if (res.success && res.data) {
+                setUser(res.data);
+                return true;
+            }
+            return false;
+        } catch {
+            return false;
         }
-        return false;
     };
+
     const quickLoginAsOwais = async () => {
         await login('mohammadowais616@gmail.com', 'password123');
     };
-    return (<AuthContext.Provider value={{
-            user,
-            token,
-            isAuthenticated: !!user,
-            isLoading,
-            isAuthModalOpen,
-            setIsAuthModalOpen,
-            login,
-            register,
-            logout,
-            updateProfile,
-            addAddress,
-            deleteAddress,
-            setDefaultAddress,
-            quickLoginAsOwais,
-        }}>
-      {children}
-    </AuthContext.Provider>);
+
+    return (
+        <AuthContext.Provider
+            value={{
+                user,
+                token,
+                isAuthenticated: !!user,
+                isLoading,
+                isAuthModalOpen,
+                setIsAuthModalOpen,
+                login,
+                register,
+                logout,
+                updateProfile,
+                addAddress,
+                deleteAddress,
+                setDefaultAddress,
+                quickLoginAsOwais,
+            }}
+        >
+            {children}
+        </AuthContext.Provider>
+    );
 };
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

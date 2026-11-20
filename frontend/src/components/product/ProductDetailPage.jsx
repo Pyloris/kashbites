@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { useCart } from '../../context/CartContext.jsx';
-import { fetchProductById, fetchReviews, submitReview, uploadMediaApi } from '../../services/api.js';
+import { useGetProductByIdQuery } from '../../services/products.api.js';
+import { useGetReviewsQuery, useSubmitReviewMutation } from '../../services/reviews.api.js';
+import { useUploadMediaMutation } from '../../services/media.api.js';
 import { CertificateModal } from '../modals/CertificateModal.jsx';
 import { PackagingVideoModal } from '../modals/PackagingVideoModal.jsx';
 import { Star, ShoppingBag, Zap, ShieldCheck, PlayCircle, Award, CheckCircle2, ChevronLeft, Truck, RotateCcw, Sparkles, MapPin, Leaf, Camera, X, } from 'lucide-react';
@@ -13,7 +15,6 @@ const ProductDetailContent = ({ product, onBack, onSelectProduct }) => {
     const [quantity, setQuantity] = useState(1);
     const [isCertModalOpen, setIsCertModalOpen] = useState(false);
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-    const [reviews, setReviews] = useState([]);
     const [showReviewForm, setShowReviewForm] = useState(false);
     const [newReview, setNewReview] = useState({
         author: '',
@@ -25,448 +26,453 @@ const ProductDetailContent = ({ product, onBack, onSelectProduct }) => {
     });
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
+
+    const { data: reviews = [] } = useGetReviewsQuery(product._id);
+    const [submitReviewMutation] = useSubmitReviewMutation();
+    const [uploadMediaMutation] = useUploadMediaMutation();
+
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        fetchReviews(product._id).then(setReviews);
     }, [product._id]);
+
     const currentWeightObj = product.netWeights.find((w) => w.weight === selectedWeight) || product.netWeights[0];
     const currentPrice = (currentWeightObj?.price || product.price) * quantity;
     const originalPriceCalculated = Math.round(currentPrice * 1.25);
+
     const handleReviewImageUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file)
             return;
         setIsUploadingImage(true);
-        const url = await uploadMediaApi(file, 'reviews');
-        if (url) {
-            setNewReview((prev) => ({ ...prev, images: [...prev.images, url] }));
+        try {
+            const url = await uploadMediaMutation({ file, folder: 'reviews' }).unwrap();
+            if (url) {
+                setNewReview((prev) => ({ ...prev, images: [...prev.images, url] }));
+            }
+        } catch (err) {
+            console.error('Error uploading media:', err);
+        } finally {
+            setIsUploadingImage(false);
+            e.target.value = '';
         }
-        setIsUploadingImage(false);
-        e.target.value = '';
     };
+
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
         if (!newReview.author || !newReview.title || !newReview.comment)
             return;
-        const saved = await submitReview({
-            productId: product._id,
-            ...newReview,
-        });
-        if (saved) {
-            setReviews((prev) => [saved, ...prev]);
-            setReviewSubmitSuccess(true);
-            setShowReviewForm(false);
-            setNewReview({ author: '', location: '', rating: 5, title: '', comment: '', images: [] });
-            setTimeout(() => setReviewSubmitSuccess(false), 4000);
+        try {
+            const res = await submitReviewMutation({
+                productId: product._id,
+                author: newReview.author,
+                location: newReview.location || 'Kashmir Lover',
+                rating: newReview.rating,
+                title: newReview.title,
+                comment: newReview.comment,
+                images: newReview.images,
+            }).unwrap();
+            if (res) {
+                setReviewSubmitSuccess(true);
+                setNewReview({
+                    author: '',
+                    location: '',
+                    rating: 5,
+                    title: '',
+                    comment: '',
+                    images: [],
+                });
+                setShowReviewForm(false);
+                setTimeout(() => setReviewSubmitSuccess(false), 5000);
+            }
+        } catch (err) {
+            console.error('Error submitting review:', err);
         }
     };
-    return (<div className="bg-[#FAF7F2] min-h-screen py-8 sm:py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Breadcrumb & Back Navigation */}
-        <div className="flex items-center gap-2 text-xs text-[#6B7D70] mb-6">
-          <button onClick={onBack} className="flex items-center gap-1 hover:text-[#0E331E] font-medium transition-colors">
-            <ChevronLeft className="w-4 h-4"/>
-            <span>Back to All Dry Fruits</span>
-          </button>
-          <span>/</span>
-          <span className="capitalize">{product.category}</span>
-          <span>/</span>
-          <span className="text-[#0E331E] font-semibold">{product.name}</span>
-        </div>
 
-        {/* 2-Column Product Showcase: Pictures Left & Purchase Module Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
-          {/* ================= LEFT COLUMN: PRODUCT PICTURES & MEDIA ================= */}
-          <div className="lg:col-span-7 flex flex-col gap-4">
-            
-            {/* Primary Large Picture View */}
-            <div className="relative bg-white rounded-2xl overflow-hidden border border-[#E6DECF] shadow-sm aspect-4/3 sm:aspect-16/10">
-              <img src={product.images[selectedImageIndex] || product.images[0]} alt={product.name} className="w-full h-full object-cover transition-all duration-300" referrerPolicy="no-referrer"/>
+    const avgRating = reviews.length > 0
+        ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+        : product.rating;
 
-              {/* Verified Kashmir Origin Watermark Stamp */}
-              <div className="absolute top-4 left-4 bg-[#143E26]/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-md">
-                <Leaf className="w-3.5 h-3.5 text-[#DFB248]"/>
-                <span>100% Kashmir Origin</span>
-              </div>
-
-              {/* Direct Overlaid Video Watch Badge */}
-              <button onClick={() => setIsVideoModalOpen(true)} className="absolute bottom-4 right-4 bg-[#0A2416]/90 hover:bg-[#143E26] text-[#DFB248] backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border border-[#DFB248]/50 shadow-lg transition-all active:scale-95">
-                <PlayCircle className="w-4 h-4 text-[#DFB248]"/>
-                <span>Watch Packaging in Srinagar</span>
-              </button>
+    return (
+        <div className="bg-[#FAF7F2] min-h-screen pb-16">
+            {/* Top Bar / Breadcrumb */}
+            <div className="bg-white border-b border-[#E8DEC8]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+                    <button onClick={onBack} className="inline-flex items-center gap-1.5 text-xs font-bold text-[#143E26] hover:text-[#C59432] transition-colors">
+                        <ChevronLeft className="w-4 h-4" />
+                        Back to Harvest
+                    </button>
+                    <span className="text-[11px] font-semibold text-[#8B988E] uppercase tracking-wider">
+                        {product.category} · 2026 Batch
+                    </span>
+                </div>
             </div>
 
-            {/* Thumbnail Row */}
-            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-              {product.images.map((img, idx) => (<button key={idx} onClick={() => setSelectedImageIndex(idx)} className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedImageIndex === idx
-                ? 'border-[#C59432] ring-2 ring-[#C59432]/30 scale-95 shadow-xs'
-                : 'border-[#E6DECF] opacity-75 hover:opacity-100'}`}>
-                  <img src={img} alt={`${product.name} packaging shot ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer"/>
-                </button>))}
+            {/* Main Product Layout */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                    {/* LEFT COLUMN: Gallery */}
+                    <div className="lg:col-span-6 space-y-4">
+                        <div className="relative aspect-square rounded-2xl overflow-hidden bg-white border border-[#E8DEC8] shadow-sm">
+                            <img src={product.images[selectedImageIndex] || product.primaryImage} alt={product.name} className="w-full h-full object-cover" />
+                            <div className="absolute top-3 left-3 bg-[#143E26]/90 backdrop-blur-xs text-[#FAF7F2] px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase border border-[#C59432]">
+                                {product.origin}
+                            </div>
+                        </div>
 
-              {/* Quick Video Thumbnail Card */}
-              <button onClick={() => setIsVideoModalOpen(true)} className="relative aspect-square rounded-xl overflow-hidden border-2 border-dashed border-[#C59432] bg-[#143E26] text-[#DFB248] flex flex-col items-center justify-center p-2 text-center hover:bg-[#1C5134] transition-colors">
-                <PlayCircle className="w-6 h-6 mb-1 text-[#DFB248]"/>
-                <span className="text-[10px] font-bold uppercase leading-tight">Packaging Video</span>
-              </button>
-            </div>
+                        {/* Thumbnails */}
+                        {product.images.length > 1 && (
+                            <div className="flex gap-3 overflow-x-auto pb-2">
+                                {product.images.map((img, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setSelectedImageIndex(idx)}
+                                        className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${selectedImageIndex === idx ? 'border-[#143E26] shadow-md scale-102' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                    >
+                                        <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
 
-            {/* Trust Assurance Cards Below Pictures */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-              <div onClick={() => setIsCertModalOpen(true)} className="p-4 rounded-xl bg-white border border-[#E6DECF] hover:border-[#C59432] shadow-xs cursor-pointer transition-all flex items-start gap-3 group">
-                <div className="p-2.5 rounded-lg bg-[#EAF2EC] text-[#143E26] group-hover:bg-[#143E26] group-hover:text-white transition-colors">
-                  <Award className="w-5 h-5"/>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#0E331E] group-hover:text-[#C59432] transition-colors">
-                    Certificate of Verification
-                  </h4>
-                  <p className="text-[11px] text-[#637568] mt-0.5">
-                    Lab tested by Kashmir Agri-Testing Lab: 99.8% purity & zero aflatoxins.
-                  </p>
-                  <span className="text-[11px] font-semibold text-[#143E26] underline mt-1 inline-block">
-                    View Official Certificate →
-                  </span>
-                </div>
-              </div>
-
-              <div onClick={() => setIsVideoModalOpen(true)} className="p-4 rounded-xl bg-white border border-[#E6DECF] hover:border-[#C59432] shadow-xs cursor-pointer transition-all flex items-start gap-3 group">
-                <div className="p-2.5 rounded-lg bg-[#FAF0D6] text-[#9E6D0E] group-hover:bg-[#9E6D0E] group-hover:text-white transition-colors">
-                  <PlayCircle className="w-5 h-5"/>
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-[#0E331E] group-hover:text-[#C59432] transition-colors">
-                    Srinagar Packaging Video
-                  </h4>
-                  <p className="text-[11px] text-[#637568] mt-0.5">
-                    Watch our nitrogen-flushed, airtight cold-packing line in Sanat Nagar.
-                  </p>
-                  <span className="text-[11px] font-semibold text-[#143E26] underline mt-1 inline-block">
-                    Play 45-Sec Process Video →
-                  </span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* ================= RIGHT COLUMN: CONTIGUOUS PURCHASE MODULE ================= */}
-          <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-2xl border border-[#E6DECF] shadow-xs sticky top-28">
-            
-            {/* Provenance Kicker */}
-            <div className="flex items-center gap-2 mb-2 text-xs font-bold text-[#C59432] uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5"/>
-              <span>100% Kashmir Origin · Handpicked</span>
-            </div>
-
-            {/* Product Title */}
-            <h1 className="font-serif-brand text-2xl sm:text-3xl font-bold text-[#0E331E] mb-2 leading-tight">
-              {product.name}
-            </h1>
-
-            {/* Tagline */}
-            <p className="text-xs sm:text-sm text-[#5B6E60] mb-4">
-              {product.tagline}
-            </p>
-
-            {/* Ratings & Verification Ribbon */}
-            <div className="flex items-center gap-4 pb-4 border-b border-[#EFE8DC] mb-5">
-              <div className="flex items-center gap-1.5 text-xs">
-                <div className="flex text-[#C59432]">
-                  {[...Array(5)].map((_, i) => (<Star key={i} className="w-4 h-4 fill-[#C59432]"/>))}
-                </div>
-                <span className="font-bold text-[#0E331E]">{product.rating}</span>
-                <span className="text-[#7A8E7F]">({product.reviewCount} customer reviews)</span>
-              </div>
-
-              <span className="text-xs text-[#2D7A46] font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5"/> Certified Authentic
-              </span>
-            </div>
-
-            {/* Pricing Matrix */}
-            <div className="mb-6">
-              <span className="text-xs text-[#7A8E7F] block mb-1">Total Price:</span>
-              <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-[#0E331E] font-mono tabular-nums">
-                  ₹{currentPrice}
-                </span>
-                <span className="text-base text-[#8C9C90] line-through font-mono tabular-nums">
-                  ₹{originalPriceCalculated}
-                </span>
-                <span className="text-xs font-bold bg-[#EAF2EC] text-[#2D7A46] px-2 py-0.5 rounded">
-                  25% OFF
-                </span>
-              </div>
-              <span className="text-[11px] text-[#7A8E7F] block mt-1">
-                Inclusive of all taxes · Free Air Express Delivery over ₹999
-              </span>
-            </div>
-
-            {/* Pack Size / Net Weight Selector */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[#2F4435]">
-                  Select Net Weight / Pack Size:
-                </label>
-                <span className="text-xs text-[#C59432] font-semibold">
-                  Selected: {selectedWeight}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {product.netWeights.map((w) => (<button key={w.weight} onClick={() => setSelectedWeight(w.weight)} className={`py-2.5 px-3 rounded-xl border text-xs text-center transition-all ${selectedWeight === w.weight
-                ? 'border-[#143E26] bg-[#143E26] text-white font-bold shadow-xs'
-                : 'border-[#E6DECF] bg-[#FAF7F2] text-[#293E2F] hover:bg-[#F2EBE0]'}`}>
-                    <span className="block font-semibold">{w.weight}</span>
-                    <span className="text-[11px] opacity-90 font-mono">₹{w.price}</span>
-                  </button>))}
-              </div>
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="mb-6">
-              <label className="text-xs font-bold uppercase tracking-wider text-[#2F4435] block mb-2">
-                Quantity:
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center border border-[#D5CABB] rounded-lg bg-[#FAF7F2] overflow-hidden">
-                  <button onClick={() => setQuantity((prev) => Math.max(1, prev - 1))} className="px-3 py-2 text-sm font-bold text-[#143E26] hover:bg-[#EBE2D3] transition-colors">
-                    -
-                  </button>
-                  <span className="px-4 py-2 text-xs font-bold font-mono text-[#0E331E]">
-                    {quantity}
-                  </span>
-                  <button onClick={() => setQuantity((prev) => prev + 1)} className="px-3 py-2 text-sm font-bold text-[#143E26] hover:bg-[#EBE2D3] transition-colors">
-                    +
-                  </button>
-                </div>
-                <span className="text-xs text-[#5C6E61]">
-                  Total net weight: <strong>{parseInt(selectedWeight) * quantity || selectedWeight}</strong>
-                </span>
-              </div>
-            </div>
-
-            {/* CTA Buttons: Add to Cart and Buy Now */}
-            <div className="space-y-3 mb-6">
-              <button onClick={() => addToCart(product, selectedWeight, quantity)} className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-[#143E26] hover:bg-[#0D2D1B] text-[#FAF7F2] transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow active:scale-98">
-                <ShoppingBag className="w-4 h-4 text-[#DFB248]"/>
-                <span>Add to Cart · ₹{currentPrice}</span>
-              </button>
-
-              <button onClick={() => buyNow(product, selectedWeight, quantity)} className="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-[#C59432] hover:bg-[#D4A33E] text-[#0A2416] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-98">
-                <Zap className="w-4 h-4 text-[#0A2416]"/>
-                <span>Buy Now · Cash on Delivery / UPI</span>
-              </button>
-            </div>
-
-            {/* Verification & Trust Badges Strip */}
-            <div className="pt-4 border-t border-[#EFE8DC] space-y-2.5 text-xs text-[#526356]">
-              <div className="flex items-center gap-2.5">
-                <Truck className="w-4 h-4 text-[#143E26] shrink-0"/>
-                <span>Air Express Delivery across India in 2–4 business days</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-4 h-4 text-[#143E26] shrink-0"/>
-                <span>Zero chemical bleaching guarantee with 100% money-back assurance</span>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <RotateCcw className="w-4 h-4 text-[#143E26] shrink-0"/>
-                <span>Hassle-free 7-day freshness return guarantee</span>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* ================= LOWER SECTIONS: STORY, NUTRITION & REVIEWS ================= */}
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          
-          {/* Detailed Story & Nutritional Profile */}
-          <div className="lg:col-span-7 space-y-8">
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E6DECF]">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#C59432] block mb-1">
-                Harvest Provenance
-              </span>
-              <h3 className="font-serif-brand text-2xl font-bold text-[#0E331E] mb-3">
-                About this Kashmiri Crop
-              </h3>
-              <p className="text-sm text-[#3E5244] leading-relaxed mb-4">
-                {product.description}
-              </p>
-
-              <div className="bg-[#FAF7F2] p-4 rounded-xl border border-[#E8DEC8] flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-[#C59432] shrink-0 mt-0.5"/>
-                <div className="text-xs text-[#4F6354]">
-                  <strong className="text-[#0E331E] block font-semibold mb-0.5">
-                    Orchard Sourcing Location: {product.certificate.originDistrict}
-                  </strong>
-                  Hand-harvested by local farmer families, shade-dried on mountain racks, and transported immediately to our temperature-regulated facility in Srinagar.
-                </div>
-              </div>
-            </div>
-
-            {/* Nutrition Facts Table */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-[#E6DECF]">
-              <h3 className="font-serif-brand text-xl font-bold text-[#0E331E] mb-4">
-                Nutritional Breakdown (Per 100g)
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8DEC8]">
-                  <span className="text-[#7A8E7F] block">Calories</span>
-                  <span className="font-mono font-bold text-[#143E26] text-sm">{product.nutrition.calories}</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8DEC8]">
-                  <span className="text-[#7A8E7F] block">Protein</span>
-                  <span className="font-mono font-bold text-[#143E26] text-sm">{product.nutrition.protein}</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8DEC8]">
-                  <span className="text-[#7A8E7F] block">Healthy Fats</span>
-                  <span className="font-mono font-bold text-[#143E26] text-sm">{product.nutrition.healthyFats}</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8DEC8]">
-                  <span className="text-[#7A8E7F] block">Dietary Fiber</span>
-                  <span className="font-mono font-bold text-[#143E26] text-sm">{product.nutrition.fiber}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Customer Reviews & Feedback */}
-          <div className="lg:col-span-5 bg-white p-6 sm:p-8 rounded-2xl border border-[#E6DECF]">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="font-serif-brand text-xl font-bold text-[#0E331E]">
-                  Customer Reviews
-                </h3>
-                <span className="text-xs text-[#7A8E7F]">
-                  Verified buyers & feedback
-                </span>
-              </div>
-
-              <button onClick={() => setShowReviewForm(!showReviewForm)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#EAF2EC] text-[#143E26] hover:bg-[#D9E7DC] transition-colors">
-                {showReviewForm ? 'Cancel' : 'Write a Review'}
-              </button>
-            </div>
-
-            {/* Write Review Form */}
-            {showReviewForm && (<form onSubmit={handleReviewSubmit} className="mb-6 p-4 rounded-xl bg-[#FAF7F2] border border-[#E8DEC8] space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#143E26]">
-                  Share Your Experience
-                </h4>
-                <div>
-                  <input type="text" required placeholder="Your Full Name" value={newReview.author} onChange={(e) => setNewReview({ ...newReview, author: e.target.value })} className="w-full text-xs p-2 rounded-lg border border-[#D5CABB] bg-white outline-none focus:border-[#143E26]"/>
-                </div>
-                <div>
-                  <input type="text" placeholder="City (e.g. Mumbai, Delhi, Srinagar)" value={newReview.location} onChange={(e) => setNewReview({ ...newReview, location: e.target.value })} className="w-full text-xs p-2 rounded-lg border border-[#D5CABB] bg-white outline-none focus:border-[#143E26]"/>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#526356]">Rating:</span>
-                  <select value={newReview.rating} onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })} className="text-xs p-1.5 rounded-lg border border-[#D5CABB] bg-white font-medium">
-                    <option value={5}>⭐⭐⭐⭐⭐ (5/5)</option>
-                    <option value={4}>⭐⭐⭐⭐ (4/5)</option>
-                    <option value={3}>⭐⭐⭐ (3/5)</option>
-                  </select>
-                </div>
-                <div>
-                  <input type="text" required placeholder="Review Title (e.g. Outstanding sweetness & aroma)" value={newReview.title} onChange={(e) => setNewReview({ ...newReview, title: e.target.value })} className="w-full text-xs p-2 rounded-lg border border-[#D5CABB] bg-white outline-none focus:border-[#143E26]"/>
-                </div>
-                <div>
-                  <textarea required rows={3} placeholder="Write your honest comments about taste, packaging, and freshness..." value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} className="w-full text-xs p-2 rounded-lg border border-[#D5CABB] bg-white outline-none focus:border-[#143E26]"></textarea>
-                </div>
-
-                {/* Upload Review Photos to MinIO */}
-                <div>
-                  <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#143E26] bg-white border border-[#D5CABB] hover:border-[#143E26] px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
-                    <Camera className="w-3.5 h-3.5 text-[#C59432]"/>
-                    <span>{isUploadingImage ? 'Uploading to MinIO...' : 'Add Product Photo'}</span>
-                    <input type="file" accept="image/*" onChange={handleReviewImageUpload} disabled={isUploadingImage} className="hidden"/>
-                  </label>
-
-                  {newReview.images.length > 0 && (<div className="flex flex-wrap gap-2 mt-2">
-                      {newReview.images.map((imgUrl, idx) => (<div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#C59432]">
-                          <img src={imgUrl} alt="Review upload" className="w-full h-full object-cover"/>
-                          <button type="button" onClick={() => setNewReview((prev) => ({
-                        ...prev,
-                        images: prev.images.filter((_, i) => i !== idx),
-                    }))} className="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full p-0.5">
-                            <X className="w-3 h-3"/>
-                          </button>
-                        </div>))}
-                    </div>)}
-                </div>
-
-                <button type="submit" disabled={isUploadingImage} className="w-full py-2 bg-[#143E26] hover:bg-[#0D2D1B] disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors">
-                  Submit Verified Review
-                </button>
-              </form>)}
-
-            {reviewSubmitSuccess && (<div className="mb-4 p-3 rounded-lg bg-[#EAF2EC] text-[#2D7A46] text-xs font-semibold flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4"/>
-                <span>Thank you! Your verified review has been posted.</span>
-              </div>)}
-
-            {/* Reviews List */}
-            <div className="space-y-4">
-              {reviews.length === 0 ? (<p className="text-xs text-[#7A8E7F] py-4 text-center">
-                  Loading reviews...
-                </p>) : (reviews.map((rev) => (<div key={rev._id} className="pb-4 border-b border-[#EFE8DC] last:border-none">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-[#0E331E]">{rev.author}</span>
-                      <span className="text-[11px] text-[#8C9C90]">{rev.date}</span>
+                        {/* Action Modals Links */}
+                        <div className="grid grid-cols-2 gap-3 pt-2">
+                            <button
+                                onClick={() => setIsCertModalOpen(true)}
+                                className="flex items-center justify-center gap-2 p-3 bg-white hover:bg-[#F2ECE1] border border-[#C59432]/60 rounded-xl text-xs font-bold text-[#143E26] transition-colors shadow-2xs"
+                            >
+                                <ShieldCheck className="w-4 h-4 text-[#C59432]" />
+                                View Lab Purity Certificate
+                            </button>
+                            <button
+                                onClick={() => setIsVideoModalOpen(true)}
+                                className="flex items-center justify-center gap-2 p-3 bg-[#143E26] hover:bg-[#0E331E] text-white rounded-xl text-xs font-bold transition-colors shadow-2xs"
+                            >
+                                <PlayCircle className="w-4 h-4 text-[#DFB248]" />
+                                Watch Packaging Video
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs mb-1.5">
-                      <div className="flex text-[#C59432]">
-                        {[...Array(rev.rating)].map((_, i) => (<Star key={i} className="w-3 h-3 fill-[#C59432]"/>))}
-                      </div>
-                      <span className="text-[10px] text-[#2D7A46] bg-[#EAF2EC] px-1.5 py-0.2 rounded font-semibold">
-                        Verified Purchase · {rev.location}
-                      </span>
+
+                    {/* RIGHT COLUMN: Details & Purchase */}
+                    <div className="lg:col-span-6 space-y-6">
+                        <div>
+                            <span className="text-xs font-bold uppercase tracking-widest text-[#C59432] block mb-1">
+                                {product.tagline}
+                            </span>
+                            <h1 className="font-serif-brand text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0E331E] leading-tight">
+                                {product.name}
+                            </h1>
+                            <p className="text-xs text-[#526356] mt-1">{product.subtitle}</p>
+
+                            <div className="flex items-center gap-3 mt-3">
+                                <div className="flex items-center gap-1 bg-[#143E26] text-white px-2 py-0.5 rounded-md text-xs font-bold">
+                                    <span>{avgRating}</span>
+                                    <Star className="w-3 h-3 fill-current text-[#DFB248]" />
+                                </div>
+                                <span className="text-xs text-[#526356]">
+                                    ({reviews.length} certified customer reviews)
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Price Card */}
+                        <div className="p-4 bg-white rounded-xl border border-[#E8DEC8] flex items-baseline justify-between shadow-2xs">
+                            <div>
+                                <span className="text-xs text-[#526356] block">Harvest Direct Price:</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold text-[#143E26]">₹{currentPrice}</span>
+                                    <span className="text-sm line-through text-[#8B988E]">₹{originalPriceCalculated}</span>
+                                    <span className="text-xs font-bold text-[#C59432] bg-[#F7F3EA] px-2 py-0.5 rounded">
+                                        Save ₹{originalPriceCalculated - currentPrice}
+                                    </span>
+                                </div>
+                            </div>
+                            <span className="text-[10px] text-[#526356] text-right">
+                                Taxes Included<br />
+                                Free Delivery over ₹999
+                            </span>
+                        </div>
+
+                        {/* Weight Variants */}
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[#143E26] block mb-2">
+                                Select Nitrogen-Sealed Net Weight:
+                            </label>
+                            <div className="grid grid-cols-3 gap-3">
+                                {product.netWeights.map((nw) => (
+                                    <button
+                                        key={nw.weight}
+                                        onClick={() => setSelectedWeight(nw.weight)}
+                                        className={`p-3 rounded-xl border-2 text-center transition-all ${selectedWeight === nw.weight ? 'border-[#143E26] bg-[#143E26]/5 text-[#143E26] font-bold shadow-2xs' : 'border-[#E8DEC8] bg-white text-[#526356] hover:border-[#C59432]'}`}
+                                    >
+                                        <span className="block text-sm">{nw.weight}</span>
+                                        <span className="block text-xs text-[#C59432]">₹{nw.price}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Quantity & CTA Buttons */}
+                        <div className="space-y-3 pt-2">
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center border border-[#E8DEC8] rounded-xl bg-white overflow-hidden">
+                                    <button
+                                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                                        className="px-3 py-2.5 text-[#143E26] hover:bg-[#F2ECE1] font-bold text-sm"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="px-3 py-2 text-xs font-bold text-[#143E26] min-w-8 text-center">
+                                        {quantity}
+                                    </span>
+                                    <button
+                                        onClick={() => setQuantity((q) => q + 1)}
+                                        className="px-3 py-2.5 text-[#143E26] hover:bg-[#F2ECE1] font-bold text-sm"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+
+                                <button
+                                    onClick={() => addToCart(product, selectedWeight, quantity)}
+                                    className="flex-1 bg-white hover:bg-[#F2ECE1] text-[#143E26] border-2 border-[#143E26] py-2.5 px-4 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                                >
+                                    <ShoppingBag className="w-4 h-4" />
+                                    Add to Harvest Box
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={() => buyNow(product, selectedWeight, quantity)}
+                                className="w-full bg-[#143E26] hover:bg-[#0E331E] text-[#FAF7F2] py-3 px-4 rounded-xl text-xs font-bold tracking-wider uppercase transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                            >
+                                <Zap className="w-4 h-4 text-[#DFB248] fill-current" />
+                                Instant Express Checkout (COD Available)
+                            </button>
+                        </div>
+
+                        {/* Key Trust Notes */}
+                        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-[#E8DEC8]">
+                            <div className="flex items-center gap-2 text-xs text-[#526356]">
+                                <Truck className="w-4 h-4 text-[#C59432] shrink-0" />
+                                <span>Express 2-3 Day Air Delivery</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-[#526356]">
+                                <RotateCcw className="w-4 h-4 text-[#C59432] shrink-0" />
+                                <span>100% Purity Replacement Guarantee</span>
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="pt-2">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-[#143E26] mb-1">
+                                Valley Heritage & Nutrition
+                            </h3>
+                            <p className="text-xs text-[#526356] leading-relaxed">
+                                {product.description}
+                            </p>
+                        </div>
                     </div>
-                    <h5 className="text-xs font-semibold text-[#143E26] mb-1">{rev.title}</h5>
-                    <p className="text-xs text-[#526356] leading-relaxed">{rev.comment}</p>
-                    {rev.images && rev.images.length > 0 && (<div className="flex flex-wrap gap-2 mt-2.5">
-                        {rev.images.map((imgUrl, idx) => (<img key={idx} src={imgUrl} alt={`${rev.author} review photo ${idx + 1}`} className="w-16 h-16 rounded-lg object-cover border border-[#E6DECF]" referrerPolicy="no-referrer"/>))}
-                      </div>)}
-                  </div>)))}
+                </div>
+
+                {/* REVIEWS SECTION */}
+                <div className="mt-16 pt-8 border-t border-[#E8DEC8]">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="font-serif-brand text-xl sm:text-2xl font-bold text-[#0E331E]">
+                                Customer Experiences & Verification
+                            </h2>
+                            <p className="text-xs text-[#526356]">Real feedback from connoisseurs across India</p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowReviewForm(!showReviewForm)}
+                            className="px-4 py-2 bg-[#143E26] text-white text-xs font-bold rounded-xl hover:bg-[#0E331E] transition-colors"
+                        >
+                            {showReviewForm ? 'Cancel Review' : 'Write a Review'}
+                        </button>
+                    </div>
+
+                    {/* Review Form */}
+                    {showReviewForm && (
+                        <form onSubmit={handleReviewSubmit} className="mb-8 p-6 bg-white rounded-2xl border border-[#E8DEC8] space-y-4 max-w-xl">
+                            <h3 className="font-serif-brand text-base font-bold text-[#143E26]">Share Your Tasting Note</h3>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-[11px] font-bold text-[#526356] block mb-1">Your Name</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={newReview.author}
+                                        onChange={(e) => setNewReview({ ...newReview, author: e.target.value })}
+                                        className="w-full text-xs p-2.5 rounded-lg border border-[#E8DEC8] bg-[#FAF7F2]"
+                                        placeholder="Owais Ahmad"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[11px] font-bold text-[#526356] block mb-1">City / Location</label>
+                                    <input
+                                        type="text"
+                                        value={newReview.location}
+                                        onChange={(e) => setNewReview({ ...newReview, location: e.target.value })}
+                                        className="w-full text-xs p-2.5 rounded-lg border border-[#E8DEC8] bg-[#FAF7F2]"
+                                        placeholder="Srinagar / Delhi"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[11px] font-bold text-[#526356] block mb-1">Rating (1 to 5 Stars)</label>
+                                <select
+                                    value={newReview.rating}
+                                    onChange={(e) => setNewReview({ ...newReview, rating: Number(e.target.value) })}
+                                    className="w-full text-xs p-2.5 rounded-lg border border-[#E8DEC8] bg-[#FAF7F2]"
+                                >
+                                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars - Exceptional Kashmir Origin</option>
+                                    <option value="4">⭐⭐⭐⭐ 4 Stars - Very Crisp and Fresh</option>
+                                    <option value="3">⭐⭐⭐ 3 Stars - Average Quality</option>
+                                    <option value="2">⭐⭐ 2 Stars - Below Expectation</option>
+                                    <option value="1">⭐ 1 Star - Unsatisfactory</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-[11px] font-bold text-[#526356] block mb-1">Review Headline</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newReview.title}
+                                    onChange={(e) => setNewReview({ ...newReview, title: e.target.value })}
+                                    className="w-full text-xs p-2.5 rounded-lg border border-[#E8DEC8] bg-[#FAF7F2]"
+                                    placeholder="Crisp kernels with fragrant natural oil..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[11px] font-bold text-[#526356] block mb-1">Review Details</label>
+                                <textarea
+                                    required
+                                    rows={3}
+                                    value={newReview.comment}
+                                    onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                                    className="w-full text-xs p-2.5 rounded-lg border border-[#E8DEC8] bg-[#FAF7F2]"
+                                    placeholder="Explain the texture, freshness, aroma, and packaging experience..."
+                                />
+                            </div>
+
+                            {/* Image Upload for Review */}
+                            <div>
+                                <label className="text-[11px] font-bold text-[#526356] block mb-1">Attach Unboxing / Product Photos</label>
+                                <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-2 px-3 py-2 bg-[#F2ECE1] hover:bg-[#E8DEC8] text-[#143E26] rounded-lg text-xs font-semibold cursor-pointer border border-[#C59432]/40">
+                                        <Camera className="w-4 h-4 text-[#C59432]" />
+                                        <span>{isUploadingImage ? 'Uploading to MinIO...' : 'Upload Image'}</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleReviewImageUpload}
+                                            disabled={isUploadingImage}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                    <span className="text-[10px] text-[#8B988E]">Optional photos of nitrogen pouch</span>
+                                </div>
+
+                                {newReview.images.length > 0 && (
+                                    <div className="flex gap-2 mt-2">
+                                        {newReview.images.map((img, i) => (
+                                            <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#C59432]">
+                                                <img src={img} alt="Uploaded" className="w-full h-full object-cover" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full bg-[#143E26] hover:bg-[#0E331E] text-white py-2.5 rounded-xl text-xs font-bold transition-colors"
+                            >
+                                Submit Certified Review
+                            </button>
+                        </form>
+                    )}
+
+                    {reviewSubmitSuccess && (
+                        <div className="mb-6 p-4 bg-[#EAF2EC] border border-[#143E26] text-[#143E26] rounded-xl text-xs font-bold flex items-center gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-[#143E26]" />
+                            Thank you! Your verified review has been published.
+                        </div>
+                    )}
+
+                    {/* Review Cards Grid */}
+                    {reviews.length === 0 ? (
+                        <p className="text-xs text-[#8B988E]">No reviews yet. Be the first to share your experience!</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {reviews.map((r, i) => (
+                                <div key={r._id || i} className="p-4 bg-white rounded-xl border border-[#E8DEC8] space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            {[...Array(5)].map((_, s) => (
+                                                <Star
+                                                    key={s}
+                                                    className={`w-3 h-3 ${s < r.rating ? 'fill-current text-[#DFB248]' : 'text-gray-200'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-[10px] text-[#8B988E]">Verified Harvest Buyer</span>
+                                    </div>
+                                    <h4 className="text-xs font-bold text-[#0E331E]">{r.title}</h4>
+                                    <p className="text-xs text-[#526356] leading-relaxed">{r.comment}</p>
+                                    {r.images && r.images.length > 0 && (
+                                        <div className="flex gap-2 pt-1">
+                                            {r.images.map((img, imgIdx) => (
+                                                <img key={imgIdx} src={img} alt="Review attachment" className="w-12 h-12 object-cover rounded-md border border-[#E8DEC8]" />
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div className="text-[10px] text-[#8B988E] pt-1">
+                                        {r.author} {r.location ? `· ${r.location}` : ''}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-          </div>
 
+            {/* Modals */}
+            <CertificateModal
+                isOpen={isCertModalOpen}
+                onClose={() => setIsCertModalOpen(false)}
+                certificate={product.certificate}
+                productName={product.name}
+            />
+
+            <PackagingVideoModal
+                isOpen={isVideoModalOpen}
+                onClose={() => setIsVideoModalOpen(false)}
+                packagingVideo={product.packagingVideo}
+                productName={product.name}
+            />
         </div>
-
-      </div>
-
-      {/* Modals for Verification & Video */}
-      <CertificateModal product={product} isOpen={isCertModalOpen} onClose={() => setIsCertModalOpen(false)}/>
-
-      <PackagingVideoModal product={product} isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)}/>
-    </div>);
+    );
 };
 
-export const ProductDetailPage = ({ product: initialProduct, onBack, onSelectProduct }) => {
+export const ProductDetailPage = ({ initialProduct, onBack, onSelectProduct, }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
 
-  const [product, setProduct] = useState(initialProduct || null);
-  const [isLoadingProduct, setIsLoadingProduct] = useState(!initialProduct);
+  const { data: fetchedProduct, isLoading: isProductQueryLoading } = useGetProductByIdQuery(id, {
+    skip: !id || Boolean(initialProduct),
+  });
 
-  useEffect(() => {
-    if (initialProduct) {
-      setProduct(initialProduct);
-      return;
-    }
-    if (id) {
-      setIsLoadingProduct(true);
-      fetchProductById(id).then((p) => {
-        setProduct(p);
-        setIsLoadingProduct(false);
-      });
-    }
-  }, [id, initialProduct]);
+  const product = initialProduct || fetchedProduct || null;
+  const isLoadingProduct = !initialProduct && isProductQueryLoading;
 
   const handleBack = onBack || outletContext.onBack || (() => navigate(-1));
   const handleSelectProduct = onSelectProduct || outletContext.onSelectProduct || ((newId) => navigate(`/product/${newId}`));
