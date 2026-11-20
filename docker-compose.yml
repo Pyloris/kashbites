@@ -6,8 +6,6 @@ services:
     image: mongo:7.0
     container_name: kashbites-mongodb
     restart: always
-    ports:
-      - "27017:27017"
     environment:
       MONGO_INITDB_DATABASE: kashbites
     volumes:
@@ -21,9 +19,6 @@ services:
     container_name: kashbites-minio
     restart: always
     command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000" # S3 API Port
-      - "9001:9001" # MinIO Web Console Port
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kashbites_admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026}
@@ -64,28 +59,26 @@ services:
       dockerfile: Dockerfile
     container_name: kashbites-backend
     restart: always
-    ports:
-      - "5000:5000"
     environment:
       NODE_ENV: production
       PORT: 5000
       MONGODB_URI: mongodb://mongodb:27017/kashbites
       JWT_SECRET: ${JWT_SECRET:-kashbites_super_secret_jwt_key_2026}
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:9099}
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: "false"
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-kashbites_admin}
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026}
       MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-kashbites-media}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9099}
     depends_on:
       - mongodb
       - minio
     networks:
       - kashbites-network
 
-  # React Storefront Frontend Service
+  # React Storefront Frontend Service (UI)
   frontend:
     build:
       context: ./frontend
@@ -93,27 +86,25 @@ services:
     container_name: kashbites-frontend
     restart: always
     ports:
-      - "3000:80"
+      - "9099:80"
     environment:
-      VITE_API_BASE_URL: http://localhost:5000/api
-      VITE_MINIO_PUBLIC_URL: http://localhost:9000/kashbites-media
+      VITE_API_BASE_URL: /api
+      VITE_MINIO_PUBLIC_URL: /kashbites-media
     depends_on:
       - backend
     networks:
       - kashbites-network
 
-  # React Admin Panel Service (Port 3001)
+  # React Admin Panel Service
   admin-panel:
     build:
       context: ./admin-panel
       dockerfile: Dockerfile
     container_name: kashbites-admin-panel
     restart: always
-    ports:
-      - "3001:80"
     environment:
-      VITE_API_BASE_URL: http://localhost:5000/api
-      VITE_MINIO_PUBLIC_URL: http://localhost:9000/kashbites-media
+      VITE_API_BASE_URL: /api
+      VITE_MINIO_PUBLIC_URL: /kashbites-media
     depends_on:
       - backend
     networks:
