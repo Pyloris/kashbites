@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import { Product } from '../models/Product.js';
-import { initialProducts } from '../data/seedData.js';
+import { productsStore, categoriesStore, offersStore } from '../data/store.js';
 import mongoose from 'mongoose';
-
-// In-memory fallback repository
-let inMemoryProducts = [...initialProducts];
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
@@ -40,8 +37,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
       }
     }
 
-    // In-memory fallback
-    let filtered = [...inMemoryProducts];
+    let filtered = [...productsStore];
     if (category && category !== 'all') {
       filtered = filtered.filter((p) => p.category === category);
     }
@@ -83,7 +79,7 @@ export const getProductById = async (req: Request, res: Response) => {
       }
     }
 
-    const item = inMemoryProducts.find((p) => p._id === id || p.slug === id);
+    const item = productsStore.find((p) => p._id === id || p.slug === id);
     if (item) {
       return res.json({ success: true, data: item });
     }
@@ -96,7 +92,7 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const getFeaturedCombos = async (_req: Request, res: Response) => {
   try {
-    const combos = inMemoryProducts.filter((p) => p.isCombo);
+    const combos = productsStore.filter((p) => p.isCombo);
     res.json({ success: true, count: combos.length, data: combos });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to retrieve combos' });
@@ -106,16 +102,26 @@ export const getFeaturedCombos = async (_req: Request, res: Response) => {
 export const getCategories = async (_req: Request, res: Response) => {
   try {
     const categories = [
-      { id: 'all', name: 'All Dry Fruits', count: inMemoryProducts.length },
-      { id: 'walnuts', name: 'Kashmiri Walnuts', count: inMemoryProducts.filter((p) => p.category === 'walnuts').length },
-      { id: 'almonds', name: 'Mamra Almonds', count: inMemoryProducts.filter((p) => p.category === 'almonds').length },
-      { id: 'apricots', name: 'Dried Apricots & Raisins', count: inMemoryProducts.filter((p) => p.category === 'apricots').length },
-      { id: 'kernels', name: 'Walnut Kernels', count: inMemoryProducts.filter((p) => p.category === 'kernels').length },
-      { id: 'combos', name: 'Royal Gift Hampers & Combos', count: inMemoryProducts.filter((p) => p.isCombo).length },
-      { id: 'mixes', name: 'Healthy Mixes', count: inMemoryProducts.filter((p) => p.category === 'mixes').length },
+      { id: 'all', name: 'All Dry Fruits', count: productsStore.length, description: 'Complete Kashmir harvest collection' },
+      ...categoriesStore.map((c) => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        count:
+          c.id === 'combos'
+            ? productsStore.filter((p) => p.isCombo || p.category === 'combos').length
+            : productsStore.filter((p) => p.category === c.id).length,
+      })),
     ];
     res.json({ success: true, data: categories });
   } catch (error: any) {
     res.status(500).json({ success: false, message: 'Failed to retrieve categories' });
   }
+};
+
+export const getActiveOffers = async (_req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: offersStore.filter((o) => o.isActive),
+  });
 };

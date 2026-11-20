@@ -93,19 +93,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
         )}
 
         {/* Kashmiri Origin Stamp / Tag */}
-        <div className="absolute top-2.5 left-2.5">
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
           <span className="text-[10px] font-bold tracking-wider uppercase bg-[#143E26] text-[#FAF7F2] px-2 py-0.5 rounded shadow-sm">
             100% Kashmir Origin
           </span>
+          {product.promotionalOfferTag && (
+            <span className="text-[10px] font-bold tracking-wider uppercase bg-[#DFB248] text-[#0E331E] px-2 py-0.5 rounded shadow-sm">
+              {product.promotionalOfferTag}
+            </span>
+          )}
         </div>
 
         {/* Combo / Discount Pill */}
-        {product.originalPrice > product.price && (
+        {!product.inStock ? (
           <div className="absolute top-2.5 right-2.5">
-            <span className="text-[10px] font-bold bg-[#C59432] text-[#0A2416] px-2 py-0.5 rounded shadow-xs">
-              Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+            <span className="text-[10px] font-bold bg-[#B91C1C] text-white px-2.5 py-0.5 rounded shadow-xs uppercase">
+              Out of Stock
             </span>
           </div>
+        ) : (
+          product.originalPrice > product.price && (
+            <div className="absolute top-2.5 right-2.5">
+              <span className="text-[10px] font-bold bg-[#C59432] text-[#0A2416] px-2 py-0.5 rounded shadow-xs">
+                Save {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
+              </span>
+            </div>
+          )
         )}
       </div>
 
@@ -171,42 +184,57 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect }) =
                 </span>
               )}
             </div>
-            <span className="text-[11px] text-[#2D7A46] font-semibold">In Stock</span>
+            {product.inStock ? (
+              <span className="text-[11px] text-[#2D7A46] font-semibold">In Stock</span>
+            ) : (
+              <span className="text-[11px] text-[#B91C1C] font-semibold">Sold Out</span>
+            )}
           </div>
 
           {/* Direct CTA Buttons: Add to Cart & Buy Now */}
-          <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleAddToCart}
-              className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                addedJustNow
-                  ? 'bg-[#2D7A46] text-white'
-                  : 'bg-[#EBF2ED] text-[#143E26] hover:bg-[#D9E7DC] active:scale-95'
-              }`}
-            >
-              {addedJustNow ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Added!</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="w-3.5 h-3.5 text-[#143E26]" />
-                  <span>Add to Cart</span>
-                </>
-              )}
-            </button>
+          {product.inStock ? (
+            <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleAddToCart}
+                className={`py-2 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                  addedJustNow
+                    ? 'bg-[#2D7A46] text-white'
+                    : 'bg-[#EBF2ED] text-[#143E26] hover:bg-[#D9E7DC] active:scale-95'
+                }`}
+              >
+                {addedJustNow ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Added!</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-3.5 h-3.5 text-[#143E26]" />
+                    <span>Add to Cart</span>
+                  </>
+                )}
+              </button>
 
+              <button
+                onClick={handleBuyNow}
+                className="py-2 px-2.5 rounded-lg text-xs font-semibold bg-[#143E26] hover:bg-[#0D2D1B] text-white flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs"
+              >
+                <Zap className="w-3.5 h-3.5 text-[#DFB248]" />
+                <span>Buy Now</span>
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={handleBuyNow}
-              className="py-2 px-2.5 rounded-lg text-xs font-semibold bg-[#143E26] hover:bg-[#0D2D1B] text-white flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs"
+              disabled
+              onClick={(e) => e.stopPropagation()}
+              className="w-full py-2 px-2.5 rounded-lg text-xs font-semibold bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed"
             >
-              <Zap className="w-3.5 h-3.5 text-[#DFB248]" />
-              <span>Buy Now</span>
+              Currently Out of Stock
             </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
+

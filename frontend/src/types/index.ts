@@ -38,12 +38,17 @@ export interface IProduct {
   slug: string;
   category: string;
   tagline: string;
+  subtitle?: string;
   description: string;
   price: number;
   originalPrice: number;
+  discountBadge?: string;
+  promotionalOfferTag?: string;
   rating: number;
   reviewCount: number;
+  reviewsCount?: number;
   images: string[];
+  primaryImage?: string;
   netWeights: IProductWeight[];
   nutrition: INutritionInfo;
   certificate: ICertificate;
@@ -52,6 +57,7 @@ export interface IProduct {
   featured: boolean;
   isCombo: boolean;
   inStock: boolean;
+  stockQuantity?: number;
 }
 
 export interface ICartItem {
@@ -72,6 +78,7 @@ export interface IReview {
   rating: number;
   title: string;
   comment: string;
+  images?: string[];
   verifiedBuyer: boolean;
   date: string;
 }
@@ -88,11 +95,14 @@ export interface IShippingAddress {
 
 export interface IOrder {
   orderNumber: string;
+  orderId?: string;
   items: ICartItem[];
   shippingAddress: IShippingAddress;
-  paymentMethod: 'COD' | 'UPI' | 'CARD';
-  paymentStatus: 'Pending' | 'Paid' | 'Processing';
-  orderStatus: 'Confirmed' | 'Srinagar Cold-Packing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+  paymentMethod: 'COD' | 'UPI' | 'CARD' | 'Card';
+  paymentStatus: 'Pending' | 'Paid' | 'Processing' | 'Refunded';
+  orderStatus: 'Confirmed' | 'Srinagar Cold-Packing' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
+  trackingNumber?: string;
+  courierName?: string;
   subtotal: number;
   shippingFee: number;
   discount: number;

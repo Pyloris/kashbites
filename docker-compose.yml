@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:7.0
+    container_name: kashbites-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: kashbites
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - kashbites-network
+
+  # MinIO S3-Compatible Object Storage for Static Media (Product & Review Images)
+  minio:
+    image: minio/minio:latest
+    container_name: kashbites-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # S3 API Port
+      - "9001:9001" # MinIO Web Console Port
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kashbites_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kashbites-network
+
+  # MinIO Bucket Provisioning (Creates public media buckets automatically)
+  minio-init:
+    image: minio/mc:latest
+    container_name: kashbites-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-kashbites_admin} $${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026};
+      mc mb --ignore-existing local/kashbites-media;
+      mc anonymous set download local/kashbites-media;
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kashbites_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026}
+    networks:
+      - kashbites-network
+
+  # Node.js + Express Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kashbites-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/kashbites
+      JWT_SECRET: ${JWT_SECRET:-kashbites_super_secret_jwt_key_2026}
+      CORS_ORIGIN: http://localhost:3000
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_USE_SSL: "false"
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-kashbites_admin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-kashbites_minio_secret_2026}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-kashbites-media}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+    depends_on:
+      - mongodb
+      - minio
+    networks:
+      - kashbites-network
+
+  # React Storefront Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kashbites-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:5000/api
+      VITE_MINIO_PUBLIC_URL: http://localhost:9000/kashbites-media
+    depends_on:
+      - backend
+    networks:
+      - kashbites-network
+
+  # React Admin Panel Service (Port 3001)
+  admin-panel:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+    container_name: kashbites-admin-panel
+    restart: always
+    ports:
+      - "3001:80"
+    environment:
+      VITE_API_BASE_URL: http://localhost:5000/api
+      VITE_MINIO_PUBLIC_URL: http://localhost:9000/kashbites-media
+    depends_on:
+      - backend
+    networks:
+      - kashbites-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  kashbites-network:
+    driver: bridge
+

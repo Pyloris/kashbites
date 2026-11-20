@@ -4,6 +4,7 @@ export interface IProductWeight {
   weight: string;
   price: number;
   inStock: boolean;
+  stockQuantity?: number;
 }
 
 export interface INutritionInfo {
@@ -53,6 +54,8 @@ export interface IProduct extends Document {
   featured: boolean;
   isCombo: boolean;
   inStock: boolean;
+  stockQuantity?: number;
+  promotionalOfferTag?: string;
   createdAt: Date;
 }
 
@@ -73,6 +76,7 @@ const ProductSchema: Schema = new Schema(
         weight: { type: String, required: true },
         price: { type: Number, required: true },
         inStock: { type: Boolean, default: true },
+        stockQuantity: { type: Number, default: 50 },
       },
     ],
     nutrition: {
@@ -104,6 +108,8 @@ const ProductSchema: Schema = new Schema(
     featured: { type: Boolean, default: false },
     isCombo: { type: Boolean, default: false },
     inStock: { type: Boolean, default: true },
+    stockQuantity: { type: Number, default: 120 },
+    promotionalOfferTag: { type: String },
   },
   { timestamps: true }
 );

@@ -6,6 +6,7 @@ import { Footer } from './components/layout/Footer.js';
 import { HomePage } from './pages/HomePage.js';
 import { ProductDetailPage } from './components/product/ProductDetailPage.js';
 import { UserProfilePage } from './pages/UserProfilePage.js';
+import { AdminPanelPage } from './pages/AdminPanelPage.js';
 import { CartDrawer } from './components/modals/CartDrawer.js';
 import { CheckoutModal } from './components/modals/CheckoutModal.js';
 import { OrderTrackingModal } from './components/modals/OrderTrackingModal.js';
@@ -14,13 +15,29 @@ import { fetchProductById } from './services/api.js';
 import { IProduct, IOrder } from './types/index.js';
 
 export function AppContent() {
-  const [currentView, setCurrentView] = useState<'home' | 'product' | 'catalog' | 'profile'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'product' | 'catalog' | 'profile' | 'admin'>(() =>
+    window.location.pathname.startsWith('/admin') ? 'admin' : 'home'
+  );
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackedOrderNumber, setTrackedOrderNumber] = useState<string | undefined>(undefined);
+  const [storefrontRefreshKey, setStorefrontRefreshKey] = useState(0);
+
+  // Sync browser back/forward navigation for /admin
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname.startsWith('/admin')) {
+        setCurrentView('admin');
+      } else {
+        setCurrentView('home');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Load product if view changes to product
   useEffect(() => {
@@ -37,10 +54,20 @@ export function AppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleNavigate = (view: string, param?: string) => {
+  const handleNavigate = (view: string, _param?: string) => {
+    if (view === 'admin') {
+      window.history.pushState({}, '', '/admin');
+      setCurrentView('admin');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (window.location.pathname.startsWith('/admin')) {
+      window.history.pushState({}, '', '/');
+    }
     if (view === 'home') {
       setCurrentView('home');
       setSelectedProductId(null);
+      setStorefrontRefreshKey((k) => k + 1);
     } else if (view === 'profile') {
       setCurrentView('profile');
       setSelectedProductId(null);
@@ -55,6 +82,18 @@ export function AppContent() {
   const handleOrderSuccess = (order: IOrder) => {
     setTrackedOrderNumber(order.orderNumber);
   };
+
+  if (currentView === 'admin') {
+    return (
+      <AdminPanelPage
+        onBackToStorefront={() => {
+          window.history.pushState({}, '', '/');
+          setStorefrontRefreshKey((k) => k + 1);
+          setCurrentView('home');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#1B291E]">
@@ -90,6 +129,7 @@ export function AppContent() {
           />
         ) : (
           <HomePage
+            key={storefrontRefreshKey}
             onSelectProduct={handleSelectProduct}
             onNavigateToCatalog={(cat) => handleNavigate('catalog', cat)}
             searchQuery={searchQuery}
@@ -132,3 +172,4 @@ export default function App() {
     </AuthProvider>
   );
 }
+

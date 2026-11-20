@@ -128,6 +128,15 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden md:inline">Track</span>
             </button>
 
+            {/* Admin Console Button */}
+            <button
+              onClick={() => onNavigate('admin')}
+              className="px-2.5 py-1.5 rounded-lg bg-[#EFE6D5] hover:bg-[#E3D5BD] text-[#0E331E] font-bold text-xs transition-colors cursor-pointer"
+              title="Open KashBites Admin Console (/admin)"
+            >
+              Admin
+            </button>
+
             {/* Profile or Login Button */}
             {!isAuthenticated ? (
               <button

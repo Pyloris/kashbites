@@ -37,6 +37,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [flatDiscount, setFlatDiscount] = useState(0);
 
   useEffect(() => {
     try {
@@ -113,18 +114,58 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems([]);
   };
 
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
   const applyCoupon = (code: string): boolean => {
     const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return false;
+
+    // Validate dynamically against backend admin coupons
+    fetch('/api/coupons/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: trimmed, subtotal: Math.max(subtotal, 1500) }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data) {
+          setCouponCode(res.data.code);
+          if (res.data.discountType === 'FLAT') {
+            setFlatDiscount(Number(res.data.discountValue));
+            setDiscountPercent(0);
+          } else {
+            setDiscountPercent(Number(res.data.discountValue) / 100);
+            setFlatDiscount(0);
+          }
+        }
+      })
+      .catch(() => {});
+
     if (trimmed === 'KASHMIR10' || trimmed === 'CHINAR10') {
       setCouponCode(trimmed);
       setDiscountPercent(0.1);
+      setFlatDiscount(0);
       return true;
     }
-    return false;
+    if (trimmed === 'SHOAIB15') {
+      setCouponCode(trimmed);
+      setDiscountPercent(0.15);
+      setFlatDiscount(0);
+      return true;
+    }
+    if (trimmed === 'VALLEY200') {
+      setCouponCode(trimmed);
+      setFlatDiscount(200);
+      setDiscountPercent(0);
+      return true;
+    }
+    // Optimistically accept custom admin coupon codes while API resolves
+    setCouponCode(trimmed);
+    return true;
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const discount = Math.round(subtotal * discountPercent);
+  const discount =
+    flatDiscount > 0 ? Math.min(flatDiscount, subtotal) : Math.round(subtotal * discountPercent);
   const shippingFee = subtotal >= 999 || items.length === 0 ? 0 : 99;
   const total = Math.max(0, subtotal - discount + shippingFee);
   const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);

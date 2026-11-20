@@ -24,8 +24,17 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   shippingAddress: IShippingAddress;
   paymentMethod: 'COD' | 'UPI' | 'CARD';
-  paymentStatus: 'Pending' | 'Paid' | 'Processing';
-  orderStatus: 'Confirmed' | 'Srinagar Cold-Packing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+  paymentStatus: 'Pending' | 'Paid' | 'Processing' | 'Refunded';
+  orderStatus: 'Confirmed' | 'Srinagar Cold-Packing' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
+  trackingNumber?: string;
+  courierName?: string;
+  webhookSynced?: boolean;
+  statusHistory?: Array<{
+    status: string;
+    note: string;
+    updatedBy: string;
+    timestamp: string;
+  }>;
   subtotal: number;
   shippingFee: number;
   discount: number;
@@ -56,12 +65,23 @@ const OrderSchema: Schema = new Schema(
       pincode: { type: String, required: true },
     },
     paymentMethod: { type: String, enum: ['COD', 'UPI', 'CARD'], default: 'COD' },
-    paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Processing'], default: 'Pending' },
+    paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Processing', 'Refunded'], default: 'Pending' },
     orderStatus: {
       type: String,
-      enum: ['Confirmed', 'Srinagar Cold-Packing', 'Shipped', 'Out for Delivery', 'Delivered'],
+      enum: ['Confirmed', 'Srinagar Cold-Packing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'],
       default: 'Confirmed',
     },
+    trackingNumber: { type: String },
+    courierName: { type: String },
+    webhookSynced: { type: Boolean, default: false },
+    statusHistory: [
+      {
+        status: { type: String },
+        note: { type: String },
+        updatedBy: { type: String },
+        timestamp: { type: String },
+      },
+    ],
     subtotal: { type: Number, required: true },
     shippingFee: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },

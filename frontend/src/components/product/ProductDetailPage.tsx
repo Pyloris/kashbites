@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IProduct, IReview } from '../../types/index.js';
 import { useCart } from '../../context/CartContext.js';
-import { fetchReviews, submitReview } from '../../services/api.js';
+import { fetchReviews, submitReview, uploadMediaApi } from '../../services/api.js';
 import { CertificateModal } from '../modals/CertificateModal.js';
 import { PackagingVideoModal } from '../modals/PackagingVideoModal.js';
 import {
@@ -18,6 +18,8 @@ import {
   Sparkles,
   MapPin,
   Leaf,
+  Camera,
+  X,
 } from 'lucide-react';
 
 interface ProductDetailPageProps {
@@ -46,7 +48,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     rating: 5,
     title: '',
     comment: '',
+    images: [] as string[],
   });
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [reviewSubmitSuccess, setReviewSubmitSuccess] = useState(false);
 
   useEffect(() => {
@@ -58,6 +62,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     product.netWeights.find((w) => w.weight === selectedWeight) || product.netWeights[0];
   const currentPrice = (currentWeightObj?.price || product.price) * quantity;
   const originalPriceCalculated = Math.round(currentPrice * 1.25);
+
+  const handleReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingImage(true);
+    const url = await uploadMediaApi(file, 'reviews');
+    if (url) {
+      setNewReview((prev) => ({ ...prev, images: [...prev.images, url] }));
+    }
+    setIsUploadingImage(false);
+    e.target.value = '';
+  };
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +88,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       setReviews((prev) => [saved, ...prev]);
       setReviewSubmitSuccess(true);
       setShowReviewForm(false);
-      setNewReview({ author: '', location: '', rating: 5, title: '', comment: '' });
+      setNewReview({ author: '', location: '', rating: 5, title: '', comment: '', images: [] });
       setTimeout(() => setReviewSubmitSuccess(false), 4000);
     }
   };
@@ -485,9 +501,48 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     className="w-full text-xs p-2 rounded-lg border border-[#D5CABB] bg-white outline-none focus:border-[#143E26]"
                   ></textarea>
                 </div>
+
+                {/* Upload Review Photos to MinIO */}
+                <div>
+                  <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#143E26] bg-white border border-[#D5CABB] hover:border-[#143E26] px-3 py-1.5 rounded-lg cursor-pointer transition-colors">
+                    <Camera className="w-3.5 h-3.5 text-[#C59432]" />
+                    <span>{isUploadingImage ? 'Uploading to MinIO...' : 'Add Product Photo'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleReviewImageUpload}
+                      disabled={isUploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+
+                  {newReview.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {newReview.images.map((imgUrl, idx) => (
+                        <div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border border-[#C59432]">
+                          <img src={imgUrl} alt="Review upload" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNewReview((prev) => ({
+                                ...prev,
+                                images: prev.images.filter((_, i) => i !== idx),
+                              }))
+                            }
+                            className="absolute top-0.5 right-0.5 bg-black/70 text-white rounded-full p-0.5"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full py-2 bg-[#143E26] hover:bg-[#0D2D1B] text-white text-xs font-bold rounded-lg transition-colors"
+                  disabled={isUploadingImage}
+                  className="w-full py-2 bg-[#143E26] hover:bg-[#0D2D1B] disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors"
                 >
                   Submit Verified Review
                 </button>
@@ -526,6 +581,19 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                     </div>
                     <h5 className="text-xs font-semibold text-[#143E26] mb-1">{rev.title}</h5>
                     <p className="text-xs text-[#526356] leading-relaxed">{rev.comment}</p>
+                    {rev.images && rev.images.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2.5">
+                        {rev.images.map((imgUrl, idx) => (
+                          <img
+                            key={idx}
+                            src={imgUrl}
+                            alt={`${rev.author} review photo ${idx + 1}`}
+                            className="w-16 h-16 rounded-lg object-cover border border-[#E6DECF]"
+                            referrerPolicy="no-referrer"
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))
               )}
