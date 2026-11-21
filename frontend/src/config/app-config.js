@@ -2,10 +2,12 @@
  * KashBites Frontend Application Configuration
  */
 
+const isLocal = import.meta.env.VITE_IS_LOCAL === 'true' || import.meta.env.VITE_IS_LOCAL === true;
+
 export const appConfig = {
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+    baseUrl: import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://kashbites.com/api'),
     timeout: 15000,
   },
 
@@ -31,7 +33,7 @@ export const appConfig = {
 
   // Media & Asset Storage
   media: {
-    minioPublicUrl: import.meta.env.VITE_MINIO_PUBLIC_URL || '',
+    minioPublicUrl: import.meta.env.VITE_MINIO_PUBLIC_URL || (isLocal ? 'http://localhost:9000' : 'https://kashbites.com:9000'),
     defaultProductImage: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg',
   },
 
@@ -62,12 +64,15 @@ export const appConfig = {
     mode: import.meta.env.MODE,
     isProduction: import.meta.env.PROD,
     isDevelopment: import.meta.env.DEV,
+    isLocal,
   },
 };
 
 // Convenient Named Exports
 export const API_BASE_URL = appConfig.api.baseUrl;
+export const MINIO_PUBLIC_URL = appConfig.media.minioPublicUrl;
 export const STORAGE_KEYS = appConfig.storage;
 export const COMMERCE_CONFIG = appConfig.commerce;
+export const IS_LOCAL = isLocal;
 
 export default appConfig;
