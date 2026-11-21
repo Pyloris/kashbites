@@ -9,13 +9,14 @@ export const CartProvider = ({ children }) => {
         try {
             const saved = localStorage.getItem('kashbites_cart');
             return saved ? JSON.parse(saved) : [];
-        }
-        catch {
+        } catch {
             return [];
         }
     });
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [checkoutSource, setCheckoutSource] = useState('cart'); // 'cart' | 'buy_now'
+    const [buyNowItem, setBuyNowItem] = useState(null);
     const [couponCode, setCouponCode] = useState('');
     const [discountPercent, setDiscountPercent] = useState(0);
     const [flatDiscount, setFlatDiscount] = useState(0);
@@ -23,18 +24,18 @@ export const CartProvider = ({ children }) => {
     useEffect(() => {
         try {
             localStorage.setItem('kashbites_cart', JSON.stringify(items));
-        }
-        catch (e) {
+        } catch (e) {
             console.warn('LocalStorage error:', e);
         }
     }, [items]);
 
     const addToCart = (product, weight, quantity = 1) => {
         const selectedWeightObj = weight
-            ? product.netWeights.find((w) => w.weight === weight) || product.netWeights[0]
-            : product.netWeights[0];
+            ? product.netWeights?.find((w) => w.weight === weight) || product.netWeights?.[0]
+            : product.netWeights?.[0];
         const chosenWeight = selectedWeightObj ? selectedWeightObj.weight : '500g';
         const chosenPrice = selectedWeightObj ? selectedWeightObj.price : product.price;
+
         setItems((prev) => {
             const existingIndex = prev.findIndex((item) => item.productId === product._id && item.weight === chosenWeight);
             if (existingIndex > -1) {
@@ -66,12 +67,14 @@ export const CartProvider = ({ children }) => {
             removeFromCart(productId, weight);
             return;
         }
-        setItems((prev) => prev.map((item) => {
-            if (item.productId === productId && item.weight === weight) {
-                return { ...item, quantity };
-            }
-            return item;
-        }));
+        setItems((prev) =>
+            prev.map((item) => {
+                if (item.productId === productId && item.weight === weight) {
+                    return { ...item, quantity };
+                }
+                return item;
+            })
+        );
     };
 
     const removeFromCart = (productId, weight) => {
@@ -85,10 +88,13 @@ export const CartProvider = ({ children }) => {
     const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
     const applyCoupon = (code) => {
-        const trimmed = code.trim().toUpperCase();
-        if (!trimmed)
-            return false;
-        validateCouponMutation({ code: trimmed, subtotal: Math.max(subtotal, 1500) })
+        const trimmed = String(code).trim().toUpperCase();
+        if (!trimmed) return false;
+        const currentCheckoutSubtotal = checkoutSource === 'buy_now' && buyNowItem
+            ? buyNowItem.price * buyNowItem.quantity
+            : subtotal;
+
+        validateCouponMutation({ code: trimmed, subtotal: Math.max(currentCheckoutSubtotal, 500) })
             .unwrap()
             .then((res) => {
                 if (res.success && res.data) {
@@ -96,14 +102,13 @@ export const CartProvider = ({ children }) => {
                     if (res.data.discountType === 'FLAT') {
                         setFlatDiscount(Number(res.data.discountValue));
                         setDiscountPercent(0);
-                    }
-                    else {
+                    } else {
                         setDiscountPercent(Number(res.data.discountValue) / 100);
                         setFlatDiscount(0);
                     }
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
         return true;
     };
 
@@ -121,34 +126,104 @@ export const CartProvider = ({ children }) => {
     const total = Math.max(0, subtotal - discount + shippingFee);
     const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+    /**
+     * Buy Now flow:
+     * Directly initiates independent checkout for single item WITHOUT touching the user's cart
+     */
     const buyNow = (product, weight, quantity = 1) => {
-        addToCart(product, weight, quantity);
+        const selectedWeightObj = weight
+            ? product.netWeights?.find((w) => w.weight === weight) || product.netWeights?.[0]
+            : product.netWeights?.[0];
+        const chosenWeight = selectedWeightObj ? selectedWeightObj.weight : '500g';
+        const chosenPrice = selectedWeightObj ? selectedWeightObj.price : product.price;
+
+        const singleItem = {
+            productId: product._id,
+            name: product.name,
+            price: chosenPrice,
+            weight: chosenWeight,
+            quantity,
+            image: product.primaryImage || (product.images && product.images[0]),
+            slug: product.slug,
+        };
+
+        setBuyNowItem(singleItem);
+        setCheckoutSource('buy_now');
         setIsCartOpen(false);
         setIsCheckoutOpen(true);
     };
 
-    return (<CartContext.Provider value={{
-            items,
-            isCartOpen,
-            setIsCartOpen,
-            isCheckoutOpen,
-            setIsCheckoutOpen,
-            addToCart,
-            updateQuantity,
-            removeFromCart,
-            clearCart,
-            subtotal,
-            discount,
-            shippingFee,
-            total,
-            couponCode,
-            applyCoupon,
-            removeCoupon,
-            totalItemsCount,
-            buyNow,
-        }}>
-      {children}
-    </CartContext.Provider>);
+    /**
+     * Cart checkout entry point
+     */
+    const openCartCheckout = () => {
+        setCheckoutSource('cart');
+        setBuyNowItem(null);
+        setIsCartOpen(false);
+        setIsCheckoutOpen(true);
+    };
+
+    /**
+     * Active items & pricing dynamically scoped to checkout source
+     */
+    const checkoutItems = checkoutSource === 'buy_now' && buyNowItem ? [buyNowItem] : items;
+    const checkoutSubtotal = checkoutItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const checkoutDiscount = flatDiscount > 0
+        ? Math.min(flatDiscount, checkoutSubtotal)
+        : Math.round(checkoutSubtotal * discountPercent);
+    const checkoutShippingFee = checkoutSubtotal === 0 || checkoutSubtotal >= 999 ? 0 : 99;
+    const checkoutTotal = Math.max(0, checkoutSubtotal - checkoutDiscount + checkoutShippingFee);
+
+    const closeCheckout = () => {
+        setIsCheckoutOpen(false);
+        setBuyNowItem(null);
+        setCheckoutSource('cart');
+    };
+
+    const handleCheckoutSuccess = (order) => {
+        if (checkoutSource === 'cart') {
+            clearCart();
+        }
+        setBuyNowItem(null);
+        setCheckoutSource('cart');
+    };
+
+    return (
+        <CartContext.Provider
+            value={{
+                items,
+                isCartOpen,
+                setIsCartOpen,
+                isCheckoutOpen,
+                setIsCheckoutOpen,
+                closeCheckout,
+                openCartCheckout,
+                checkoutSource,
+                buyNowItem,
+                checkoutItems,
+                checkoutSubtotal,
+                checkoutDiscount,
+                checkoutShippingFee,
+                checkoutTotal,
+                handleCheckoutSuccess,
+                addToCart,
+                updateQuantity,
+                removeFromCart,
+                clearCart,
+                subtotal,
+                discount,
+                shippingFee,
+                total,
+                couponCode,
+                applyCoupon,
+                removeCoupon,
+                totalItemsCount,
+                buyNow,
+            }}
+        >
+            {children}
+        </CartContext.Provider>
+    );
 };
 
 export const useCart = () => {
@@ -158,3 +233,5 @@ export const useCart = () => {
     }
     return context;
 };
+
+export default CartContext;

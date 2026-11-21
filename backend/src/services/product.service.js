@@ -42,11 +42,38 @@ export class ProductService {
             throw ApiError.badRequest('Product ID or slug is required');
         }
 
-        const query = mongoose.Types.ObjectId.isValid(id)
-            ? { $or: [{ _id: id }, { slug: id }] }
-            : { slug: id };
+        const legacySlugMap = {
+            'kb-prod-01': 'kashmiri-walnuts',
+            'kb-prod-02': 'kashmiri-almonds',
+            'kb-prod-03': 'dried-apricots',
+            'kb-prod-04': 'walnut-kernels',
+            'kb-prod-05': 'signature-collection-emerald-box',
+            'kb-prod-06': 'mixed-dry-fruits',
+            'kb-prod-07': 'valley-trio-harvest-combo',
+            'kb-prod-08': 'kashmiri-raisins',
+        };
+        const targetId = legacySlugMap[id] || id;
 
-        const product = await Product.findOne(query).lean();
+        const query = mongoose.Types.ObjectId.isValid(targetId)
+            ? { $or: [{ _id: targetId }, { slug: targetId }] }
+            : { slug: targetId };
+
+        let product = null;
+        if (mongoose.connection.readyState === 1) {
+            product = await Product.findOne(query).lean();
+        }
+
+        if (!product) {
+            product = productsStore.find(
+                (p) =>
+                    p.slug === targetId ||
+                    String(p._id) === String(targetId) ||
+                    String(p.id) === String(targetId) ||
+                    p.slug === id ||
+                    String(p.id) === String(id)
+            );
+        }
+
         if (!product) {
             throw ApiError.notFound('Product not found');
         }

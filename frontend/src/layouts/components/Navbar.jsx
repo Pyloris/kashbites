@@ -14,13 +14,23 @@ export const Navbar = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const currentCategory = searchParams.get('category');
+  const isCatalog = location.pathname.startsWith('/catalog') || currentView === 'catalog';
+
   const activeView =
     currentView ||
     (location.pathname.startsWith('/profile')
       ? 'profile'
       : location.pathname.startsWith('/product')
       ? 'product'
+      : isCatalog
+      ? 'catalog'
       : 'home');
+
+  const isHomeActive = activeView === 'home' && (!location.pathname || location.pathname === '/');
+  const isCategoryActive = (category) =>
+    activeView === category || (isCatalog && currentCategory === category);
 
   const handleNav =
     onNavigate ||
@@ -61,33 +71,51 @@ export const Navbar = ({
           <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-brand-text-body">
             <button
               onClick={() => handleNav('home')}
-              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer ${
-                activeView === 'home' ? 'text-brand-emerald-dark font-semibold border-b-2 border-brand-emerald' : ''
+              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer border-b-2 ${
+                isHomeActive
+                  ? 'text-brand-emerald-dark font-semibold border-brand-emerald'
+                  : 'border-transparent'
               }`}
             >
               Home
             </button>
             <button
               onClick={() => handleNav('catalog', 'walnuts')}
-              className="hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer border-b-2 ${
+                isCategoryActive('walnuts')
+                  ? 'text-brand-emerald-dark font-semibold border-brand-emerald'
+                  : 'border-transparent'
+              }`}
             >
               Kashmiri Walnuts
             </button>
             <button
               onClick={() => handleNav('catalog', 'almonds')}
-              className="hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer border-b-2 ${
+                isCategoryActive('almonds')
+                  ? 'text-brand-emerald-dark font-semibold border-brand-emerald'
+                  : 'border-transparent'
+              }`}
             >
               Mamra Almonds
             </button>
             <button
               onClick={() => handleNav('catalog', 'apricots')}
-              className="hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer border-b-2 ${
+                isCategoryActive('apricots')
+                  ? 'text-brand-emerald-dark font-semibold border-brand-emerald'
+                  : 'border-transparent'
+              }`}
             >
               Sun-Dried Apricots
             </button>
             <button
               onClick={() => handleNav('catalog', 'combos')}
-              className="hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 text-brand-gold-deep font-semibold cursor-pointer"
+              className={`hover:text-brand-emerald-dark transition-colors whitespace-nowrap shrink-0 pb-1 cursor-pointer border-b-2 flex items-center gap-1.5 text-brand-gold-deep font-semibold ${
+                isCategoryActive('combos')
+                  ? 'border-brand-gold-deep'
+                  : 'border-transparent'
+              }`}
             >
               <span>Emerald Gift Box</span>
               <span className="text-[10px] bg-brand-gold-subtle text-brand-gold-dark px-1.5 py-0.2 rounded font-bold uppercase tracking-wider">Royal</span>
@@ -130,16 +158,6 @@ export const Navbar = ({
                 </button>
               )}
             </div>
-
-            {/* Track Orders */}
-            <button
-              onClick={onOpenTracking}
-              className="p-2 text-brand-text-body hover:text-brand-emerald-dark hover:bg-brand-sand-light rounded-full transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer"
-              title="Track Order / Batch Verification"
-            >
-              <UserCheck className="w-4 h-4 text-brand-emerald" />
-              <span className="hidden md:inline">Track</span>
-            </button>
 
             {/* Profile or Login Button */}
             {!isAuthenticated ? (

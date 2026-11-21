@@ -127,6 +127,90 @@
  *         description: Coupon valid and discount calculated
  *       400:
  *         description: Invalid or expired coupon
+ *
+ * /orders/razorpay/create-order:
+ *   post:
+ *     summary: Initiate Razorpay checkout and generate temporary order session
+ *     tags: [Orders]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *               - shippingAddress
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/OrderItem'
+ *               shippingAddress:
+ *                 type: object
+ *               couponCode:
+ *                 type: string
+ *               source:
+ *                 type: string
+ *                 enum: [cart, buy_now]
+ *     responses:
+ *       201:
+ *         description: Razorpay order created with temporary order session
+ *       400:
+ *         description: Incomplete payload or pricing calculation error
+ *
+ * /orders/razorpay/verify-payment:
+ *   post:
+ *     summary: Verify Razorpay payment signature and convert temporary order into confirmed order
+ *     tags: [Orders]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - razorpayOrderId
+ *               - razorpayPaymentId
+ *               - razorpaySignature
+ *             properties:
+ *               temporaryOrderId:
+ *                 type: string
+ *               razorpayOrderId:
+ *                 type: string
+ *               razorpayPaymentId:
+ *                 type: string
+ *               razorpaySignature:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Payment successfully verified and order confirmed
+ *       400:
+ *         description: Invalid payment signature
+ *
+ * /orders/razorpay/webhook:
+ *   post:
+ *     summary: Official Razorpay webhook endpoint for async payment events
+ *     tags: [Orders]
+ *     responses:
+ *       200:
+ *         description: Webhook received and processed
+ *
+ * /orders/temporary/{id}:
+ *   get:
+ *     summary: Get status of temporary order session
+ *     tags: [Orders]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Temporary order status
+ *       404:
+ *         description: Temporary order not found
  */
 
 export default {};

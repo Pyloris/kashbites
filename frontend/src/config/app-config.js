@@ -35,6 +35,11 @@ export const appConfig = {
     defaultProductImage: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg',
   },
 
+  // Payment Gateway Configuration
+  razorpay: {
+    keyId: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_U2mH2Akaz5tMoi',
+  },
+
   // E-Commerce & Shipping Defaults
   commerce: {
     currency: 'INR',

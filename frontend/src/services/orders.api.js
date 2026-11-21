@@ -15,6 +15,7 @@ export const normalizeOrder = (raw) => ({
     shippingAddress: raw.shippingAddress || {
         fullName: raw.customer?.fullName || 'Customer',
         phone: raw.customer?.phone || '',
+        email: raw.customer?.email || '',
         addressLine1: raw.customer?.address || '',
         city: raw.customer?.city || 'Srinagar',
         state: raw.customer?.state || 'Jammu & Kashmir',
@@ -35,43 +36,76 @@ export const normalizeOrder = (raw) => ({
 export const ordersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getOrders: builder.query({
-      query: () => '/orders',
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.email) queryParams.append('email', params.email);
+        if (params?.customerId) queryParams.append('customerId', params.customerId);
+        const qs = queryParams.toString();
+        return `/orders${qs ? `?${qs}` : ''}`;
+      },
       transformResponse: (response) => (response?.data || []).map(normalizeOrder),
       providesTags: ['Order'],
     }),
+
     submitOrder: builder.mutation({
       query: (orderPayload) => {
         const addr = orderPayload.shippingAddress || {};
-        const subtotal = (orderPayload.items || []).reduce(
-          (sum, item) => sum + Number(item.price) * Number(item.quantity),
-          0
-        );
-        const shippingFee = subtotal >= 999 ? 0 : 99;
         return {
           url: '/orders',
           method: 'POST',
           body: {
-            customer: {
-              fullName: addr.fullName || 'Customer',
-              email: addr.email || 'customer@kashbites.in',
-              phone: addr.phone || '+91 9876543210',
-              address: [addr.addressLine1, addr.addressLine2].filter(Boolean).join(', '),
+            items: orderPayload.items,
+            shippingAddress: {
+              fullName: addr.fullName,
+              phone: addr.phone,
+              email: addr.email,
+              addressLine1: addr.addressLine1,
+              addressLine2: addr.addressLine2 || '',
               city: addr.city || 'Srinagar',
               state: addr.state || 'Jammu & Kashmir',
               pincode: addr.pincode || '190001',
             },
-            items: orderPayload.items,
-            subtotal,
-            shippingFee,
-            totalAmount: subtotal + shippingFee,
+            paymentMethod: orderPayload.paymentMethod || 'COD',
             couponCode: orderPayload.couponCode,
-            paymentMethod: orderPayload.paymentMethod === 'CARD' ? 'Card' : orderPayload.paymentMethod,
+            source: orderPayload.source || 'cart',
           },
         };
       },
       transformResponse: (response) => (response?.data ? normalizeOrder(response.data) : null),
       invalidatesTags: ['Order'],
     }),
+
+    initiateRazorpayOrder: builder.mutation({
+      query: ({ items, shippingAddress, couponCode, source }) => ({
+        url: '/orders/razorpay/create-order',
+        method: 'POST',
+        body: { items, shippingAddress, couponCode, source },
+      }),
+    }),
+
+    verifyRazorpayPayment: builder.mutation({
+      query: (payload) => ({
+        url: '/orders/razorpay/verify-payment',
+        method: 'POST',
+        body: payload,
+      }),
+      transformResponse: (response) => (response?.data ? response.data : null),
+      invalidatesTags: ['Order'],
+    }),
+
+    cancelTemporaryOrder: builder.mutation({
+      query: (payload) => ({
+        url: '/orders/razorpay/cancel',
+        method: 'POST',
+        body: payload,
+      }),
+    }),
+
+    getTemporaryOrderStatus: builder.query({
+      query: (id) => `/orders/temporary/${id}`,
+      transformResponse: (response) => (response?.data ? response.data : null),
+    }),
+
     validateCoupon: builder.mutation({
       query: ({ code, subtotal }) => ({
         url: '/coupons/validate',
@@ -86,5 +120,11 @@ export const ordersApi = baseApi.injectEndpoints({
 export const {
   useGetOrdersQuery,
   useSubmitOrderMutation,
+  useInitiateRazorpayOrderMutation,
+  useVerifyRazorpayPaymentMutation,
+  useCancelTemporaryOrderMutation,
+  useGetTemporaryOrderStatusQuery,
   useValidateCouponMutation,
 } = ordersApi;
+
+export default ordersApi;

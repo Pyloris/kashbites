@@ -33,6 +33,20 @@ export const appConfig = {
     SHIPPING_WEBHOOK_SECRET: Config.get("SHIPPING_WEBHOOK_SECRET", "kb_whsec_srinagar_2026"),
     SHIPPING_OUTBOUND_WEBHOOK_URL: Config.get("SHIPPING_OUTBOUND_WEBHOOK_URL", "https://shipping-webhook.kashbites-logistics.io/v1/orders/push"),
 
+    // Razorpay Payment Gateway
+    RAZORPAY_KEY_ID: Config.get("RAZORPAY_KEY_ID", "rzp_test_U2mH2Akaz5tMoi"),
+    RAZORPAY_KEY_SECRET: Config.get("RAZORPAY_KEY_SECRET", "GwbR12o3uyN8GrUlGCwW31ew"),
+    RAZORPAY_WEBHOOK_SECRET: Config.get("RAZORPAY_WEBHOOK_SECRET", "whsec_kashbites_razorpay_2026"),
+
+    // SMTP Email Configuration
+    SMTP_HOST: Config.get("SMTP_HOST", "smtp.gmail.com"),
+    SMTP_PORT: parseInt(Config.get("SMTP_PORT", "587"), 10),
+    SMTP_SECURE: Config.get("SMTP_SECURE", "false") === "true",
+    SMTP_USER: Config.get("SMTP_USER", ""),
+    SMTP_PASSWORD: Config.get("SMTP_PASSWORD", ""),
+    SMTP_FROM_EMAIL: Config.get("SMTP_FROM_EMAIL", "orders@kashbites.in"),
+    SMTP_FROM_NAME: Config.get("SMTP_FROM_NAME", "KashBites"),
+
     // Redis & BullMQ Message Queue
     REDIS_HOST: Config.get("REDIS_HOST", "localhost"),
     REDIS_PORT: parseInt(Config.get("REDIS_PORT", "6379"), 10),

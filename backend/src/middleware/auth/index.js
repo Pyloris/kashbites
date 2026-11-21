@@ -75,8 +75,37 @@ export const requireAdmin = (req, res, next) => {
 
 export const authenticateService = () => requireAuth;
 
+/**
+ * Optional authentication middleware for guest checkout or authenticated customer sessions
+ */
+export const optionalAuth = (req, _res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return next();
+        }
+        const token = authHeader.split(" ")[1];
+        if (token.startsWith("admin_jwt_")) {
+            const adminId = token.replace("admin_jwt_", "");
+            const admin = adminsStore.find((a) => a._id === adminId || a.username === adminId) || adminsStore[0];
+            req.user = { id: admin?._id || admin?.username || "admin", name: admin?.name || "Admin", role: admin?.role || "superadmin", isAdmin: true };
+            return next();
+        }
+        if (token.startsWith("jwt_token_")) {
+            const userId = token.replace("jwt_token_", "");
+            req.user = { id: userId, role: "customer" };
+            return next();
+        }
+        req.user = { id: token, role: "user" };
+        return next();
+    } catch {
+        return next();
+    }
+};
+
 export default {
     requireAuth,
     requireAdmin,
     authenticateService,
+    optionalAuth,
 };

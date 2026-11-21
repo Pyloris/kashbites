@@ -58,30 +58,8 @@ const app = createApp();
 
 // Phase 4: Start HTTP listener if run directly
 const PORT = appConfig.PORT;
-let server;
 
-// Only bind server if this module is run as the entrypoint
-if (process.argv[1] && (process.argv[1].endsWith('app.js') || process.argv[1].endsWith('server.js'))) {
-    server = app.listen(Number(PORT), '0.0.0.0', () => {
-        console.log(`[${appConfig.APP_NAME}] Running on http://0.0.0.0:${PORT} in [${appConfig.NODE_ENV}] mode`);
-        console.log(`[${appConfig.APP_NAME}] Swagger UI available at http://0.0.0.0:${PORT}/swagger`);
-    });
 
-    // Phase 5: Graceful termination
-    const shutdown = async (signal) => {
-        console.log(`[Lifecycle] Received ${signal}, closing HTTP server gracefully...`);
-        if (server) {
-            server.close(() => {
-                console.log('[Lifecycle] HTTP server closed.');
-                process.exit(0);
-            });
-        } else {
-            process.exit(0);
-        }
-    };
-
-    process.on('SIGTERM', () => shutdown('SIGTERM'));
-    process.on('SIGINT', () => shutdown('SIGINT'));
-}
-
-export default app;
+app.listen(PORT, '0.0.0.0', ()=>{
+    console.log(`[${appConfig.APP_NAME}] Running on http://0.0.0.0:${PORT} in [${appConfig.NODE_ENV}] mode`);
+});

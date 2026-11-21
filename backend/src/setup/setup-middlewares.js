@@ -31,13 +31,20 @@ export const setupMiddlewares = (app) => {
         },
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type,Authorization,X-Requested-With,Accept,Origin,x-api-key,x-shipping-webhook-secret',
+        allowedHeaders: 'Content-Type,Authorization,X-Requested-With,Accept,Origin,x-api-key,x-shipping-webhook-secret,x-razorpay-signature',
     };
 
     app.use(cors(corsOptions));
 
-    // Request body parsers with explicit payload limits
-    app.use(express.json({ limit: '50mb' }));
+    // Request body parsers with explicit payload limits and rawBody capture for webhook signature verification
+    app.use(
+        express.json({
+            limit: '50mb',
+            verify: (req, _res, buf) => {
+                req.rawBody = buf;
+            },
+        })
+    );
     app.use(express.urlencoded({ limit: '50mb', extended: true, parameterLimit: 100000 }));
 
     app.use(cookieParser());

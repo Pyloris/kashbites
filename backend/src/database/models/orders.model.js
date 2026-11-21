@@ -15,14 +15,18 @@ const OrderSchema = new Schema({
     shippingAddress: {
         fullName: { type: String, required: true },
         phone: { type: String, required: true },
+        email: { type: String },
         addressLine1: { type: String, required: true },
         addressLine2: { type: String },
         city: { type: String, required: true },
         state: { type: String, required: true },
         pincode: { type: String, required: true },
     },
-    paymentMethod: { type: String, enum: ['COD', 'UPI', 'CARD'], default: 'COD' },
-    paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Processing', 'Refunded'], default: 'Pending' },
+    customerId: { type: String },
+    customerEmail: { type: String },
+    customerPhone: { type: String },
+    paymentMethod: { type: String, enum: ['COD', 'UPI', 'CARD', 'ONLINE'], default: 'COD' },
+    paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Processing', 'Refunded', 'Failed'], default: 'Pending' },
     orderStatus: {
         type: String,
         enum: ['Confirmed', 'Srinagar Cold-Packing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled'],
@@ -31,6 +35,11 @@ const OrderSchema = new Schema({
     trackingNumber: { type: String },
     courierName: { type: String },
     webhookSynced: { type: Boolean, default: false },
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+    temporaryOrderId: { type: String },
+    checkoutSource: { type: String, enum: ['cart', 'buy_now'], default: 'cart' },
     statusHistory: [
         {
             status: { type: String },

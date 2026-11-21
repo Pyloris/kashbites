@@ -4,7 +4,8 @@ import { Button, Badge } from '../../../components/ui/index.js';
 
 const HERO_SLIDES = [
   {
-    id: 'kb-prod-05',
+    id: 'signature-collection-emerald-box',
+    slug: 'signature-collection-emerald-box',
     category: 'combos',
     kicker: 'ROYAL LAUNCH · 2026 SIGNATURE COLLECTION',
     title: 'The Regal Emerald Gift Hamper',
@@ -23,7 +24,8 @@ const HERO_SLIDES = [
     ctaText: 'Explore Royal Hamper',
   },
   {
-    id: 'kb-prod-01',
+    id: 'kashmiri-walnuts',
+    slug: 'kashmiri-walnuts',
     category: 'walnuts',
     kicker: 'DIRECT FROM SHOPIAN & PULWAMA ORCHARDS',
     title: 'Pure Kashmiri Kagzi Walnuts & Almonds',
@@ -42,7 +44,8 @@ const HERO_SLIDES = [
     ctaText: 'Shop Kashmiri Walnuts',
   },
   {
-    id: 'kb-prod-07',
+    id: 'valley-trio-harvest-combo',
+    slug: 'valley-trio-harvest-combo',
     category: 'combos',
     kicker: 'VALUE HARVEST COMBO PACK',
     title: 'The Himalayan Valley Orchard Trio',
@@ -62,9 +65,19 @@ const HERO_SLIDES = [
   },
 ];
 
-export const HeroSection = ({ onExplore, onSelectProduct }) => {
+export const HeroSection = ({ onExplore, onSelectProduct, products = [] }) => {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const slide = HERO_SLIDES[currentSlideIndex];
+
+  const handleProductSelect = () => {
+    const matched = products.find(
+      (p) => p.slug === slide.slug || p._id === slide.id || p.slug === slide.id
+    );
+    const target = matched?.slug || matched?._id || slide.slug || slide.id;
+    if (onSelectProduct) {
+      onSelectProduct(target);
+    }
+  };
 
   return (
     <section className="relative overflow-hidden text-brand-text-light">
@@ -142,7 +155,7 @@ export const HeroSection = ({ onExplore, onSelectProduct }) => {
               <Button
                 variant="gold"
                 size="lg"
-                onClick={() => onSelectProduct(slide.id)}
+                onClick={handleProductSelect}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
                 {slide.ctaText}
@@ -177,7 +190,7 @@ export const HeroSection = ({ onExplore, onSelectProduct }) => {
           </div>
 
           <div className="lg:col-span-5 relative">
-            <div className="relative group cursor-pointer" onClick={() => onSelectProduct(slide.id)}>
+            <div className="relative group cursor-pointer" onClick={handleProductSelect}>
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border-2 border-brand-gold/40 bg-brand-emerald-darker">
                 <img
                   src={slide.image}

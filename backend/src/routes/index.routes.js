@@ -24,9 +24,6 @@ router.use('/reviews', reviewRoutes);
 router.use('/media', mediaRoutes);
 router.use('/admin', adminRoutes);
 
-// Inbound shipping webhook fallback
-router.post('/webhooks/shipping', AdminController.handleIncomingShippingWebhook);
-
 // Backward compatible coupon validate endpoint (/api/coupons/validate)
 router.post('/coupons/validate', OrderController.validateCoupon);
 

@@ -450,3 +450,7 @@ export const dispatchOutboundOrderWebhook = async (order) => {
     webhookLogsStore.unshift(logEntry);
     return logEntry;
 };
+
+// 12. Temporary Orders Store (for Razorpay online checkout attempts and pending payment sessions)
+export const temporaryOrdersStore = [];
+

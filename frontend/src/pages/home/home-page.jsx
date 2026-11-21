@@ -31,6 +31,7 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
   }, [urlCategory]);
 
   const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: allProducts = [] } = useGetProductsQuery({ category: 'all' });
   const { data: products = [], isLoading } = useGetProductsQuery({
     category: selectedCategory,
     search: effectiveSearchQuery,
@@ -38,7 +39,10 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
   });
 
   const signatureProduct =
-    products.find((p) => p.slug === 'signature-collection-emerald-box') || products[0];
+    allProducts.find((p) => p.slug === 'signature-collection-emerald-box') ||
+    products.find((p) => p.slug === 'signature-collection-emerald-box') ||
+    allProducts[0] ||
+    products[0];
 
   const handleCategorySelect = (cat) => {
     setSelectedCategory(cat);
@@ -56,7 +60,11 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
   return (
     <div className="bg-brand-canvas">
       {/* 1. Hero Section */}
-      <HeroSection onExplore={handleHeroExplore} onSelectProduct={handleSelectProduct} />
+      <HeroSection
+        onExplore={handleHeroExplore}
+        onSelectProduct={handleSelectProduct}
+        products={allProducts.length ? allProducts : products}
+      />
 
       {/* 2. Trust Pillars Bar */}
       {/* <TrustSection /> */}
