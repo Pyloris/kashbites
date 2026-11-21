@@ -41,6 +41,14 @@ export class AuthService {
         }
 
         const cleanEmail = email.toLowerCase().trim();
+
+        if (mongoose.connection.readyState === 1) {
+            const existingInDb = await User.findOne({ email: cleanEmail });
+            if (existingInDb) {
+                throw ApiError.conflict('An account with this email already exists');
+            }
+        }
+
         const existingUser = usersStore.find((u) => u.email === cleanEmail);
         if (existingUser) {
             throw ApiError.conflict('An account with this email already exists');
@@ -84,16 +92,62 @@ export class AuthService {
 
     static async getMe({ authHeader }) {
         const userId = authHeader ? authHeader.replace('Bearer ', '').replace('jwt_token_', '') : null;
-        const user = usersStore.find((u) => u._id === userId) || usersStore[0];
-        if (!user) {
-            throw ApiError.notFound('User not found');
+        if (!userId) {
+            throw ApiError.unauthorized('Invalid authorization token');
         }
-        const { password: _, ...userData } = user;
-        return userData;
+
+        // 1. Query MongoDB User model
+        if (mongoose.connection.readyState === 1) {
+            let user = null;
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+                user = await User.findById(userId);
+            }
+            if (!user) {
+                user = await User.findOne({ _id: userId });
+            }
+            if (user) {
+                const userObj = user.toObject();
+                delete userObj.password;
+                return userObj;
+            }
+        }
+
+        // 2. Query in-memory usersStore
+        const user = usersStore.find((u) => String(u._id) === String(userId) || String(u.id) === String(userId));
+        if (user) {
+            const { password: _, ...userData } = user;
+            return userData;
+        }
+
+        throw ApiError.notFound('User not found');
     }
 
     static async updateProfile({ id, email, name, phone, notifications }) {
-        const userIndex = usersStore.findIndex((u) => u._id === id || u.email === email);
+        if (mongoose.connection.readyState === 1) {
+            const query = [];
+            if (id && mongoose.Types.ObjectId.isValid(id)) query.push({ _id: id });
+            if (email) query.push({ email: email.toLowerCase().trim() });
+
+            if (query.length > 0) {
+                const updateFields = {};
+                if (name) updateFields.name = name;
+                if (phone) updateFields.phone = phone;
+                if (notifications) updateFields.notifications = notifications;
+
+                const updated = await User.findOneAndUpdate(
+                    { $or: query },
+                    { $set: updateFields },
+                    { new: true }
+                );
+                if (updated) {
+                    const userObj = updated.toObject();
+                    delete userObj.password;
+                    return userObj;
+                }
+            }
+        }
+
+        const userIndex = usersStore.findIndex((u) => String(u._id) === String(id) || u.email === email);
         if (userIndex === -1) {
             throw ApiError.notFound('User not found');
         }
@@ -107,35 +161,67 @@ export class AuthService {
     }
 
     static async addAddress({ userId, address }) {
-        const user = usersStore.find((u) => u._id === userId) || usersStore[0];
-        if (!user) {
-            throw ApiError.notFound('User not found');
-        }
-
         const newAddress = {
             id: `addr-${Date.now()}`,
             label: address.label || 'Home',
             fullName: address.fullName,
             phone: address.phone,
             addressLine1: address.addressLine1,
-            addressLine2: address.addressLine2,
+            addressLine2: address.addressLine2 || '',
             city: address.city,
             state: address.state,
             pincode: address.pincode,
-            isDefault: user.addresses.length === 0 ? true : !!address.isDefault,
+            isDefault: !!address.isDefault,
         };
 
-        if (newAddress.isDefault) {
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(userId)) {
+            const user = await User.findById(userId);
+            if (user) {
+                if (!user.addresses || user.addresses.length === 0) {
+                    newAddress.isDefault = true;
+                }
+                if (newAddress.isDefault && user.addresses) {
+                    user.addresses.forEach((a) => (a.isDefault = false));
+                }
+                user.addresses.push(newAddress);
+                await user.save();
+                const userObj = user.toObject();
+                delete userObj.password;
+                return userObj;
+            }
+        }
+
+        const user = usersStore.find((u) => String(u._id) === String(userId) || String(u.id) === String(userId));
+        if (!user) {
+            throw ApiError.notFound('User not found');
+        }
+
+        if (!user.addresses || user.addresses.length === 0) {
+            newAddress.isDefault = true;
+        }
+        if (newAddress.isDefault && user.addresses) {
             user.addresses.forEach((a) => (a.isDefault = false));
         }
 
+        user.addresses = user.addresses || [];
         user.addresses.push(newAddress);
         const { password: _, ...userData } = user;
         return userData;
     }
 
     static async deleteAddress({ userId, addressId }) {
-        const user = usersStore.find((u) => u._id === userId) || usersStore[0];
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(userId)) {
+            const user = await User.findById(userId);
+            if (user) {
+                user.addresses = user.addresses.filter((a) => a.id !== addressId);
+                await user.save();
+                const userObj = user.toObject();
+                delete userObj.password;
+                return userObj;
+            }
+        }
+
+        const user = usersStore.find((u) => String(u._id) === String(userId) || String(u.id) === String(userId));
         if (!user) {
             throw ApiError.notFound('User not found');
         }
@@ -146,7 +232,20 @@ export class AuthService {
     }
 
     static async setDefaultAddress({ userId, addressId }) {
-        const user = usersStore.find((u) => u._id === userId) || usersStore[0];
+        if (mongoose.connection.readyState === 1 && mongoose.Types.ObjectId.isValid(userId)) {
+            const user = await User.findById(userId);
+            if (user) {
+                user.addresses.forEach((a) => {
+                    a.isDefault = a.id === addressId;
+                });
+                await user.save();
+                const userObj = user.toObject();
+                delete userObj.password;
+                return userObj;
+            }
+        }
+
+        const user = usersStore.find((u) => String(u._id) === String(userId) || String(u.id) === String(userId));
         if (!user) {
             throw ApiError.notFound('User not found');
         }

@@ -20,6 +20,7 @@ import {
     dispatchOrderConfirmationEmail,
     dispatchPaymentSuccessEmail,
     dispatchWelcomeEmail,
+    dispatchAccountCredentialsEmail,
 } from '../queues/email.queue.js';
 
 let razorpayClient = null;
@@ -192,7 +193,7 @@ export class OrderService {
     /**
      * Find existing customer or auto-create guest account
      */
-    static async findOrCreateCustomer({ fullName, email, phone, shippingAddress = {}, authenticatedUserId = null }) {
+    static async findOrCreateCustomer({ fullName, email, phone, shippingAddress = {}, authenticatedUserId = null, createIfNotFound = true }) {
         const cleanEmail = email ? String(email).trim().toLowerCase() : null;
         const cleanPhone = phone ? String(phone).trim() : null;
 
@@ -218,8 +219,8 @@ export class OrderService {
             }
         }
 
-        // 3. Identify by phone if not found
-        if (!customer && cleanPhone) {
+        // 3. Identify by phone only if email was NOT provided
+        if (!customer && !cleanEmail && cleanPhone) {
             if (mongoose.connection.readyState === 1) {
                 customer = await User.findOne({ phone: cleanPhone });
             }
@@ -263,11 +264,16 @@ export class OrderService {
             return { customer: customerObj, isNew: false };
         }
 
-        // 4. Auto-create guest customer account (no mandatory password required from guest)
+        // If not found and not requested to create, return null
+        if (!createIfNotFound) {
+            return { customer: null, isNew: true };
+        }
+
+        // 4. Auto-create guest customer account (with clean, random password)
         const guestName = fullName || 'Guest Customer';
         const guestEmail = cleanEmail || `guest_${Date.now()}@kashbites.in`;
         const guestPhone = cleanPhone || '+91 98765 43210';
-        const generatedPassword = `guest_${crypto.randomBytes(6).toString('hex')}`;
+        const generatedPassword = `KB-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
         const initialAddresses = [];
         if (shippingAddress && shippingAddress.addressLine1) {
@@ -307,8 +313,7 @@ export class OrderService {
                 const createdObj = created.toObject();
                 delete createdObj.password;
                 usersStore.push(createdObj);
-                dispatchWelcomeEmail(createdObj).catch(() => {});
-                return { customer: createdObj, isNew: true };
+                return { customer: createdObj, isNew: true, rawPassword: generatedPassword };
             } catch (err) {
                 console.warn('[OrderService] Note creating guest user in DB:', err.message);
             }
@@ -320,7 +325,7 @@ export class OrderService {
         };
         usersStore.push(fallbackCustomer);
         const { password: _, ...safeCustomer } = fallbackCustomer;
-        return { customer: safeCustomer, isNew: true };
+        return { customer: safeCustomer, isNew: true, rawPassword: generatedPassword };
     }
 
     /**
@@ -335,12 +340,13 @@ export class OrderService {
         const { validatedItems, subtotal, shippingFee } = await OrderService.validateAndPriceItems({ items });
 
         // 2. Identify or auto-create customer
-        const { customer } = await OrderService.findOrCreateCustomer({
+        const { customer, isNew, rawPassword } = await OrderService.findOrCreateCustomer({
             fullName: shippingAddress.fullName,
             email: shippingAddress.email,
             phone: shippingAddress.phone,
             shippingAddress,
             authenticatedUserId,
+            createIfNotFound: true,
         });
 
         // 3. Server-side discount calculation
@@ -408,6 +414,20 @@ export class OrderService {
             console.warn('[OrderService] Order confirmation email queue note:', err.message)
         );
 
+        // If a guest account was newly created on the go for this order, dispatch login credentials email
+        if (isNew && rawPassword && (customer.email || shippingAddress.email)) {
+            dispatchAccountCredentialsEmail({
+                user: {
+                    ...customer,
+                    name: customer.name || shippingAddress.fullName,
+                    email: customer.email || shippingAddress.email,
+                },
+                rawPassword,
+            }).catch((err) =>
+                console.warn('[OrderService] Account credentials email dispatch note:', err.message)
+            );
+        }
+
         ordersStore.unshift(newOrder);
 
         if (mongoose.connection.readyState === 1) {
@@ -429,13 +449,14 @@ export class OrderService {
         // 1. Server-side validation of products and price recalculation
         const { validatedItems, subtotal, shippingFee } = await OrderService.validateAndPriceItems({ items });
 
-        // 2. Identify or create customer record
+        // 2. Identify existing customer record if present (do not create guest account until order is paid/confirmed)
         const { customer } = await OrderService.findOrCreateCustomer({
             fullName: shippingAddress.fullName,
             email: shippingAddress.email,
             phone: shippingAddress.phone,
             shippingAddress,
             authenticatedUserId,
+            createIfNotFound: false,
         });
 
         // 3. Calculate coupon discount server-side
@@ -456,8 +477,8 @@ export class OrderService {
                 notes: {
                     temporaryOrderId,
                     customerName: shippingAddress.fullName,
-                    customerEmail: shippingAddress.email || customer.email,
-                    customerPhone: shippingAddress.phone || customer.phone,
+                    customerEmail: shippingAddress.email || customer?.email,
+                    customerPhone: shippingAddress.phone || customer?.phone,
                     source: source || 'cart',
                 },
             });
@@ -472,16 +493,17 @@ export class OrderService {
             temporaryOrderId,
             razorpayOrderId: rzpOrder.id,
             customer: {
-                userId: customer._id ? String(customer._id) : undefined,
+                userId: customer?._id ? String(customer._id) : undefined,
                 fullName: shippingAddress.fullName,
-                email: shippingAddress.email || customer.email,
-                phone: shippingAddress.phone || customer.phone,
+                email: shippingAddress.email || customer?.email,
+                phone: shippingAddress.phone || customer?.phone,
+                isGuest: !customer?._id,
             },
             items: validatedItems,
             shippingAddress: {
                 fullName: shippingAddress.fullName,
                 phone: shippingAddress.phone,
-                email: shippingAddress.email || customer.email,
+                email: shippingAddress.email || customer?.email,
                 addressLine1: shippingAddress.addressLine1,
                 addressLine2: shippingAddress.addressLine2 || '',
                 city: shippingAddress.city,
@@ -541,14 +563,41 @@ export class OrderService {
             return existingOrder;
         }
 
+        // If customer was a guest without an account, create account on the fly now that payment succeeded
+        let customerId = tempOrder.customer?.userId;
+        if (!customerId) {
+            const { customer, isNew, rawPassword } = await OrderService.findOrCreateCustomer({
+                fullName: tempOrder.shippingAddress?.fullName || tempOrder.customer?.fullName,
+                email: tempOrder.shippingAddress?.email || tempOrder.customer?.email,
+                phone: tempOrder.shippingAddress?.phone || tempOrder.customer?.phone,
+                shippingAddress: tempOrder.shippingAddress,
+                createIfNotFound: true,
+            });
+            if (customer?._id) {
+                customerId = String(customer._id);
+            }
+            if (isNew && rawPassword) {
+                dispatchAccountCredentialsEmail({
+                    user: {
+                        ...customer,
+                        name: customer?.name || tempOrder.shippingAddress?.fullName || tempOrder.customer?.fullName,
+                        email: customer?.email || tempOrder.shippingAddress?.email || tempOrder.customer?.email,
+                    },
+                    rawPassword,
+                }).catch((err) =>
+                    console.warn('[OrderService] Account credentials email dispatch note:', err.message)
+                );
+            }
+        }
+
         const orderNumber = `KB-${Math.floor(10000 + Math.random() * 90000)}`;
         const actualOrder = {
             orderNumber,
             items: tempOrder.items,
             shippingAddress: tempOrder.shippingAddress,
-            customerId: tempOrder.customer?.userId,
-            customerEmail: tempOrder.customer?.email,
-            customerPhone: tempOrder.customer?.phone,
+            customerId,
+            customerEmail: tempOrder.customer?.email || tempOrder.shippingAddress?.email,
+            customerPhone: tempOrder.customer?.phone || tempOrder.shippingAddress?.phone,
             paymentMethod: 'ONLINE',
             paymentStatus: 'Paid',
             orderStatus: 'Confirmed',

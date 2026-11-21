@@ -31,6 +31,15 @@ export const processEmailJob = async (job) => {
             if (!finalSubject) {
                 finalSubject = 'Welcome to KashBites Chinar Club 🍁';
             }
+        } else if (template === 'account-credentials' && templateData) {
+            finalHtml = EmailService.renderAccountCreatedTemplate({
+                name: templateData.user?.name,
+                email: templateData.user?.email,
+                password: templateData.rawPassword,
+            });
+            if (!finalSubject) {
+                finalSubject = `Your KashBites Account Has Been Created! 🏔️ (Login Credentials Inside)`;
+            }
         }
     }
 

@@ -131,6 +131,33 @@ export const dispatchPaymentSuccessEmail = async (order, paymentInfo = {}) => {
 };
 
 /**
+ * Dispatches an account creation & credentials email for automatically created guest accounts
+ */
+export const dispatchAccountCredentialsEmail = async ({ user, rawPassword }) => {
+    const to = user?.email;
+    if (!to || !rawPassword) {
+        console.warn('[EmailQueue] Skipping credentials email: recipient email or password missing');
+        return null;
+    }
+
+    const subject = `Your KashBites Account Has Been Created! 🏔️ (Login Credentials Inside)`;
+    const html = EmailService.renderAccountCreatedTemplate({
+        name: user.name,
+        email: user.email,
+        password: rawPassword,
+    });
+
+    return await dispatchEmailJob({
+        to,
+        subject,
+        html,
+        template: 'account-credentials',
+        templateData: { user, rawPassword },
+        jobId: `account-cred-${user.email}-${Date.now()}`,
+    });
+};
+
+/**
  * Dispatches a welcome email for newly created accounts
  */
 export const dispatchWelcomeEmail = async (user) => {
@@ -158,4 +185,5 @@ export default {
     dispatchOrderConfirmationEmail,
     dispatchPaymentSuccessEmail,
     dispatchWelcomeEmail,
+    dispatchAccountCredentialsEmail,
 };

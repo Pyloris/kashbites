@@ -265,6 +265,88 @@ export class EmailService {
         </body>
         </html>`;
     }
+
+    /**
+     * Account Created on Guest Order Template (with Login Credentials)
+     */
+    static renderAccountCreatedTemplate({ name, email, password, loginUrl = appConfig.APP_URL }) {
+        const displayName = name || 'Valued Customer';
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your KashBites Account Credentials</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;">
+                <!-- Header -->
+                <div style="background-color: #0f382c; padding: 30px 24px; text-align: center; color: #ffffff;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1px;">KashBites</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #d4af37; text-transform: uppercase; letter-spacing: 2px;">Welcome to Chinar Club · Pure Himalayan Harvest</p>
+                </div>
+
+                <!-- Body Content -->
+                <div style="padding: 28px 24px;">
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <span style="display: inline-block; padding: 6px 16px; border-radius: 9999px; font-size: 12px; font-weight: 600; background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
+                            Account Created Successfully 🏔️
+                        </span>
+                        <h2 style="margin: 14px 0 6px; font-size: 20px; color: #111827;">Welcome, ${displayName}!</h2>
+                        <p style="margin: 0; font-size: 14px; color: #4b5563; line-height: 1.5;">
+                            To ensure you can easily track your order, download GST invoices, and enjoy seamless reorders, we have automatically created a <strong>KashBites Chinar Club</strong> account for you.
+                        </p>
+                    </div>
+
+                    <!-- Credentials Card -->
+                    <div style="background-color: #fcfbf7; border: 2px dashed #0f382c; border-radius: 10px; padding: 20px; margin: 24px 0;">
+                        <h3 style="margin: 0 0 14px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #0f382c; text-align: center; font-weight: 700;">
+                            🔑 Your Login Credentials
+                        </h3>
+
+                        <div style="margin-bottom: 12px; background: #ffffff; padding: 12px 14px; border-radius: 6px; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px; color: #6b7280; font-weight: 600;">Email:</span>
+                            <span style="font-size: 14px; color: #111827; font-family: monospace; font-weight: 700;">${email}</span>
+                        </div>
+
+                        <div style="background: #ffffff; padding: 12px 14px; border-radius: 6px; border: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 13px; color: #6b7280; font-weight: 600;">Temporary Password:</span>
+                            <span style="font-size: 15px; color: #0f382c; font-family: monospace; font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 4px; border: 1px solid #a7f3d0; letter-spacing: 1px;">${password}</span>
+                        </div>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 28px 0;">
+                        <a href="${loginUrl}" target="_blank" style="display: inline-block; background-color: #0f382c; color: #ffffff; padding: 14px 32px; border-radius: 8px; font-size: 14px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 4px rgba(15, 56, 44, 0.2);">
+                            Sign In to KashBites &rarr;
+                        </a>
+                    </div>
+
+                    <!-- Member Perks Box -->
+                    <div style="background-color: #f3f4f6; border-radius: 8px; padding: 16px; font-size: 13px; color: #374151; line-height: 1.6; margin-bottom: 20px;">
+                        <strong style="color: #0f382c;">✨ What you can do with your account:</strong>
+                        <ul style="margin: 8px 0 0; padding-left: 20px;">
+                            <li>Live-track your walnut & almond parcels shipped from Srinagar.</li>
+                            <li>Earn <strong>Chinar Club Points</strong> on every order to redeem for future harvest discounts.</li>
+                            <li>Update your password anytime under <strong>Settings &gt; Security</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <p style="font-size: 12px; color: #9ca3af; text-align: center; margin-top: 24px;">
+                        For your security, we recommend changing your password after your first sign in.
+                    </p>
+                </div>
+
+                <!-- Footer -->
+                <div style="background-color: #f3f4f6; padding: 16px 24px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb;">
+                    <p style="margin: 0 0 4px;">KashBites Kashmir · Industrial Estate, Sanat Nagar, Srinagar, J&K – 190005</p>
+                    <p style="margin: 0;">Need help? Reply to this email or visit <a href="${loginUrl}" style="color: #0f382c; text-decoration: underline;">kashbites.in</a></p>
+                </div>
+            </div>
+        </body>
+        </html>`;
+    }
 }
 
 export default EmailService;
