@@ -8,8 +8,6 @@ import {
   ShieldCheck,
   Award,
   Lock,
-  Copy,
-  Check,
   Share2,
   Heart,
   Clock,
@@ -61,9 +59,8 @@ export const LaunchingScreen = () => {
   const [selectedInterest, setSelectedInterest] = useState('All Harvest');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [couponCode, setCouponCode] = useState('KASHLAUNCH20');
 
   // Launch Countdown State
   const [timeLeft, setTimeLeft] = useState({
@@ -79,14 +76,15 @@ export const LaunchingScreen = () => {
       const stored = localStorage.getItem('kashbites_prelaunch_lead');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed?.couponCode) {
-          setCouponCode(parsed.couponCode);
+        if (parsed?.submitted || parsed?.couponCode || parsed?.phone) {
           setIsSubmitted(true);
           if (parsed?.phone) setPhoneNumber(parsed.phone);
         }
       }
     } catch {
       // ignore localStorage reading errors
+    } finally {
+      setIsCheckingStatus(false);
     }
   }, []);
 
@@ -130,7 +128,7 @@ export const LaunchingScreen = () => {
 
     try {
       const apiEndpoint = `${appConfig.api.baseUrl}/prelaunch/lead`;
-      const response = await fetch(apiEndpoint, {
+      await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -142,9 +140,6 @@ export const LaunchingScreen = () => {
         }),
       });
 
-      const data = await response.json();
-      const code = data?.data?.couponCode || 'KASHLAUNCH20';
-      setCouponCode(code);
       setIsSubmitted(true);
 
       // Save to localStorage
@@ -152,9 +147,9 @@ export const LaunchingScreen = () => {
         localStorage.setItem(
           'kashbites_prelaunch_lead',
           JSON.stringify({
-            phone: `${countryCode}${cleanDigits}`,
+            phone: `${countryCode} ${cleanDigits}`,
             name: visitorName,
-            couponCode: code,
+            submitted: true,
             timestamp: new Date().toISOString(),
           })
         );
@@ -163,15 +158,14 @@ export const LaunchingScreen = () => {
       }
     } catch (err) {
       console.warn('Backend lead submission fallback:', err);
-      setCouponCode('KASHLAUNCH20');
       setIsSubmitted(true);
       try {
         localStorage.setItem(
           'kashbites_prelaunch_lead',
           JSON.stringify({
-            phone: `${countryCode}${cleanDigits}`,
+            phone: `${countryCode} ${cleanDigits}`,
             name: visitorName,
-            couponCode: 'KASHLAUNCH20',
+            submitted: true,
             timestamp: new Date().toISOString(),
           })
         );
@@ -183,14 +177,8 @@ export const LaunchingScreen = () => {
     }
   };
 
-  const handleCopyCoupon = () => {
-    navigator.clipboard.writeText(couponCode);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2500);
-  };
-
   const shareText = encodeURIComponent(
-    `Exclusive Prelaunch Access: Get 20% OFF authentic Himalayan walnuts, Mamra almonds & dry fruits from KashBites! Register for your WhatsApp launch coupon: ${window.location.origin}`
+    `Exclusive Prelaunch Access: Authentic Himalayan walnuts, Mamra almonds & festive dry fruits from KashBites! Register for early launch access: ${window.location.origin}`
   );
 
   return (
@@ -340,7 +328,47 @@ export const LaunchingScreen = () => {
               {/* Decorative Corner Glow */}
               <div className="absolute top-0 right-0 w-28 h-28 bg-brand-gold/15 rounded-full blur-xl pointer-events-none"></div>
 
-              {!isSubmitted ? (
+              {isCheckingStatus ? (
+                /* Skeleton Loader while checking status */
+                <div className="space-y-3.5 animate-pulse py-1">
+                  {/* Header Skeleton */}
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-brand-emerald-deep/80 border border-brand-emerald/60 shrink-0"></div>
+                    <div className="space-y-1.5 flex-1">
+                      <div className="h-4 bg-brand-emerald-deep/90 rounded w-3/4"></div>
+                      <div className="h-3 bg-brand-emerald-deep/70 rounded w-1/2"></div>
+                    </div>
+                  </div>
+
+                  {/* Selector Pills Skeleton */}
+                  <div className="space-y-1.5">
+                    <div className="h-2.5 bg-brand-emerald-deep/70 rounded w-1/3"></div>
+                    <div className="flex gap-1.5">
+                      <div className="h-6 w-16 bg-brand-emerald-deep/80 rounded-full"></div>
+                      <div className="h-6 w-16 bg-brand-emerald-deep/80 rounded-full"></div>
+                      <div className="h-6 w-20 bg-brand-emerald-deep/80 rounded-full"></div>
+                    </div>
+                  </div>
+
+                  {/* Name Input Skeleton */}
+                  <div className="space-y-1.5">
+                    <div className="h-2.5 bg-brand-emerald-deep/70 rounded w-1/4"></div>
+                    <div className="h-8 bg-brand-emerald-deep/90 border border-brand-emerald/60 rounded-xl w-full"></div>
+                  </div>
+
+                  {/* Phone Input Skeleton */}
+                  <div className="space-y-1.5">
+                    <div className="h-2.5 bg-brand-emerald-deep/70 rounded w-1/3"></div>
+                    <div className="flex gap-1.5">
+                      <div className="h-8 w-20 bg-brand-emerald-deep/90 border border-brand-emerald/60 rounded-xl"></div>
+                      <div className="h-8 flex-1 bg-brand-emerald-deep/90 border border-brand-emerald/60 rounded-xl"></div>
+                    </div>
+                  </div>
+
+                  {/* Button Skeleton */}
+                  <div className="h-10 bg-brand-gold/20 border border-brand-gold/30 rounded-xl w-full mt-2"></div>
+                </div>
+              ) : !isSubmitted ? (
                 <div>
                   {/* Card Header */}
                   <div className="flex items-center gap-2.5 mb-2.5">
@@ -463,52 +491,32 @@ export const LaunchingScreen = () => {
               ) : (
                 /* Success State */
                 <div className="text-center py-2 space-y-3">
-                  <div className="w-11 h-11 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 shadow-sm">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
 
                   <div>
-                    <span className="text-[9px] bg-brand-gold/20 text-brand-gold-bright border border-brand-gold/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
-                      VIP Launch Pass Active
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                      Phone Number Submitted
                     </span>
                     <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mt-1.5">
-                      You're on the Launch Roster!
+                      Submitted Successfully!
                     </h3>
-                    <p className="text-xs text-brand-sand-light/90 max-w-xs mx-auto mt-1 leading-relaxed">
-                      We'll alert your WhatsApp <strong className="text-brand-gold-bright">{countryCode} {phoneNumber}</strong> the moment launch orders begin.
+                  </div>
+
+                  {/* Launch Day Notification Confirmation Card */}
+                  <div className="bg-brand-emerald-deep/90 border border-brand-gold/40 rounded-xl p-3.5 max-w-sm mx-auto shadow-inner space-y-1.5">
+                    <div className="flex items-center justify-center gap-1.5 text-brand-gold-bright text-xs font-semibold">
+                      <Sparkles className="w-3.5 h-3.5 text-brand-gold" />
+                      <span>Launch Day Access</span>
+                    </div>
+                    <p className="text-xs text-brand-sand-light/90 leading-relaxed">
+                      Your phone number has been registered. You will receive your launch code directly on WhatsApp on launch day.
                     </p>
                   </div>
 
-                  {/* Coupon Code Reveal Card */}
-                  <div className="bg-brand-emerald-deep/90 border border-brand-gold/50 rounded-xl p-3 max-w-xs mx-auto shadow-inner">
-                    <div className="text-[9px] uppercase tracking-widest text-brand-sand-medium font-bold mb-1">
-                      Your Reserved Launch Code (20% OFF)
-                    </div>
-                    <div className="flex items-center justify-between gap-2 bg-brand-emerald/70 px-3 py-1.5 rounded-lg border border-brand-gold/30">
-                      <span className="font-mono text-base font-bold text-brand-gold-bright tracking-wider">
-                        {couponCode}
-                      </span>
-                      <button
-                        onClick={handleCopyCoupon}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-brand-gold hover:bg-brand-gold-bright text-brand-emerald-deep font-bold text-[11px] transition-colors cursor-pointer"
-                      >
-                        {copiedCode ? (
-                          <>
-                            <Check className="w-3 h-3" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Share with Friends on WhatsApp */}
-                  <div>
+                  <div className="pt-0.5">
                     <a
                       href={`https://wa.me/?text=${shareText}`}
                       target="_blank"
@@ -516,7 +524,7 @@ export const LaunchingScreen = () => {
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-sm"
                     >
                       <Share2 className="w-3.5 h-3.5" />
-                      <span>Share Coupon on WhatsApp</span>
+                      <span>Share with Friends on WhatsApp</span>
                       <ExternalLink className="w-3 h-3 opacity-80" />
                     </a>
                   </div>
