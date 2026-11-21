@@ -5,6 +5,9 @@ import cookieParser from 'cookie-parser';
 import { appConfig } from '../config/app-config.js';
 
 export const setupMiddlewares = (app) => {
+    // Trust reverse proxy headers (Cloudflare -> Host Nginx -> Docker Nginx)
+    app.set('trust proxy', 1);
+
     // Dynamic CORS validation
     const corsOptions = {
         origin: (origin, callback) => {
