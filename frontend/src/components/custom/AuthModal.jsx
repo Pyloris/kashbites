@@ -47,31 +47,6 @@ export const AuthModal = () => {
       }
     >
       <div className="space-y-4">
-        {mode === 'login' && (
-          <div className="p-3 rounded-xl bg-brand-gold-tint border border-brand-gold/60 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-brand-gold-dark shrink-0" />
-              <div className="text-left">
-                <span className="text-[11px] font-bold text-brand-text-display block">
-                  Quick Testing Account
-                </span>
-                <span className="text-[10px] text-brand-text-muted">
-                  mohammadowais616@gmail.com
-                </span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="primary"
-              size="xs"
-              onClick={quickLoginAsOwais}
-            >
-              1-Click Login
-            </Button>
-          </div>
-        )}
-
         {error && (
           <Alert variant="danger" onClose={() => setError('')}>
             {error}
@@ -85,7 +60,7 @@ export const AuthModal = () => {
                 label="Full Name *"
                 type="text"
                 required
-                placeholder="e.g. Mohammad Owais"
+                placeholder="e.g. Shoaib Wani"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 leftIcon={<UserIcon className="w-4 h-4 text-brand-text-subtle" />}

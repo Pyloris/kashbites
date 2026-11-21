@@ -1,5 +1,6 @@
 import { Product } from '../database/models/products.model.js';
-import { productsStore, categoriesStore, offersStore } from '../data/store.js';
+import { Category } from '../database/models/categories.model.js';
+import { Coupon } from '../database/models/coupons.model.js';
 import { ApiError } from '../errors/api-error.js';
 import mongoose from 'mongoose';
 
@@ -8,58 +9,29 @@ export class ProductService {
      * List products with filtering and sorting
      */
     static async list({ category, search, sort, isCombo, featured } = {}) {
-        if (mongoose.connection.readyState === 1) {
-            let query = {};
-            if (category && category !== 'all') {
-                query.category = category;
-            }
-            if (isCombo === 'true' || isCombo === true) {
-                query.isCombo = true;
-            }
-            if (featured === 'true' || featured === true) {
-                query.featured = true;
-            }
-            if (search) {
-                query.$or = [
-                    { name: { $regex: search, $options: 'i' } },
-                    { description: { $regex: search, $options: 'i' } },
-                    { tagline: { $regex: search, $options: 'i' } },
-                ];
-            }
-            let sortOption = { createdAt: -1 };
-            if (sort === 'price-low') sortOption = { price: 1 };
-            if (sort === 'price-high') sortOption = { price: -1 };
-            if (sort === 'rating') sortOption = { rating: -1 };
-
-            const products = await Product.find(query).sort(sortOption).lean();
-            if (products.length > 0) {
-                return products;
-            }
-        }
-
-        let filtered = [...productsStore];
+        const query = {};
         if (category && category !== 'all') {
-            filtered = filtered.filter((p) => p.category === category);
+            query.category = category;
         }
         if (isCombo === 'true' || isCombo === true) {
-            filtered = filtered.filter((p) => p.isCombo);
+            query.isCombo = true;
         }
         if (featured === 'true' || featured === true) {
-            filtered = filtered.filter((p) => p.featured);
+            query.featured = true;
         }
-        if (search && typeof search === 'string') {
-            const q = search.toLowerCase();
-            filtered = filtered.filter((p) =>
-                p.name.toLowerCase().includes(q) ||
-                p.description.toLowerCase().includes(q) ||
-                p.tagline.toLowerCase().includes(q)
-            );
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { tagline: { $regex: search, $options: 'i' } },
+            ];
         }
-        if (sort === 'price-low') filtered.sort((a, b) => a.price - b.price);
-        if (sort === 'price-high') filtered.sort((a, b) => b.price - a.price);
-        if (sort === 'rating') filtered.sort((a, b) => b.rating - a.rating);
+        let sortOption = { createdAt: -1 };
+        if (sort === 'price-low') sortOption = { price: 1 };
+        if (sort === 'price-high') sortOption = { price: -1 };
+        if (sort === 'rating') sortOption = { rating: -1 };
 
-        return filtered;
+        return await Product.find(query).sort(sortOption).lean();
     }
 
     /**
@@ -70,53 +42,75 @@ export class ProductService {
             throw ApiError.badRequest('Product ID or slug is required');
         }
 
-        if (mongoose.connection.readyState === 1) {
-            const query = mongoose.Types.ObjectId.isValid(id)
-                ? { $or: [{ _id: id }, { slug: id }] }
-                : { slug: id };
-            const product = await Product.findOne(query).lean();
-            if (product) {
-                return product;
-            }
-        }
+        const query = mongoose.Types.ObjectId.isValid(id)
+            ? { $or: [{ _id: id }, { slug: id }] }
+            : { slug: id };
 
-        const item = productsStore.find((p) => p._id === id || p.slug === id);
-        if (!item) {
+        const product = await Product.findOne(query).lean();
+        if (!product) {
             throw ApiError.notFound('Product not found');
         }
 
-        return item;
+        return product;
     }
 
     /**
      * Retrieve featured combos
      */
     static async getFeaturedCombos() {
-        return productsStore.filter((p) => p.isCombo);
+        return await Product.find({ isCombo: true }).lean();
     }
 
     /**
-     * Retrieve categories with product counts
+     * Retrieve categories with dynamic product counts from MongoDB
      */
     static async getCategories() {
+        const [categories, totalProductCount, categoryAggregations, combosCount] = await Promise.all([
+            Category.find().lean(),
+            Product.countDocuments(),
+            Product.aggregate([
+                { $group: { _id: '$category', count: { $sum: 1 } } },
+            ]),
+            Product.countDocuments({ $or: [{ isCombo: true }, { category: 'combos' }] }),
+        ]);
+
+        const countMap = {};
+        for (const item of categoryAggregations) {
+            countMap[item._id] = item.count;
+        }
+        countMap['combos'] = combosCount;
+
         return [
-            { id: 'all', name: 'All Dry Fruits', count: productsStore.length, description: 'Complete Kashmir harvest collection' },
-            ...categoriesStore.map((c) => ({
+            {
+                id: 'all',
+                name: 'All Dry Fruits',
+                count: totalProductCount,
+                description: 'Complete Kashmir harvest collection',
+            },
+            ...categories.map((c) => ({
                 id: c.id,
                 name: c.name,
-                description: c.description,
-                count: c.id === 'combos'
-                    ? productsStore.filter((p) => p.isCombo || p.category === 'combos').length
-                    : productsStore.filter((p) => p.category === c.id).length,
+                description: c.description || '',
+                count: countMap[c.id] || 0,
             })),
         ];
     }
 
     /**
-     * Retrieve active promotional offers
+     * Retrieve active promotional offers from MongoDB
      */
     static async getActiveOffers() {
-        return offersStore.filter((o) => o.isActive);
+        const coupons = await Coupon.find({ isActive: true }).lean();
+        return coupons.map((c) => ({
+            id: c._id.toString(),
+            title: c.code,
+            subtitle: c.description,
+            badgeText: `${c.discountValue}${c.discountType === 'PERCENTAGE' ? '%' : '₹'} OFF`,
+            discountPercentage: c.discountType === 'PERCENTAGE' ? c.discountValue : undefined,
+            targetCategory: 'all',
+            couponCode: c.code,
+            isActive: c.isActive,
+        }));
     }
 }
 

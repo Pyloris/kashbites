@@ -141,15 +141,6 @@ export const Navbar = ({
               <span className="hidden md:inline">Track</span>
             </button>
 
-            {/* Admin Console Button */}
-            <button
-              onClick={() => handleNav('admin')}
-              className="px-2.5 py-1.5 rounded-lg bg-brand-sand-light hover:bg-brand-sand text-brand-emerald-dark font-bold text-xs transition-colors cursor-pointer"
-              title="Open KashBites Admin Console (/admin)"
-            >
-              Admin
-            </button>
-
             {/* Profile or Login Button */}
             {!isAuthenticated ? (
               <button
@@ -176,17 +167,6 @@ export const Navbar = ({
                   <span className="text-xs font-bold hidden sm:inline max-w-[80px] truncate">
                     {user?.name ? user.name.split(' ')[0] : 'Profile'}
                   </span>
-                </button>
-                <button
-                  onClick={() => handleNav('settings')}
-                  title="Account Settings"
-                  className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                    activeView === 'settings'
-                      ? 'bg-brand-emerald text-brand-gold-bright'
-                      : 'text-brand-text-muted hover:text-brand-emerald hover:bg-brand-emerald-tint'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
                 </button>
               </div>
             )}

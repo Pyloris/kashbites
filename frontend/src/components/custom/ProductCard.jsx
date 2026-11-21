@@ -13,8 +13,11 @@ export const ProductCard = ({ product, onSelect }) => {
   const currentWeightObj =
     product.netWeights?.find((w) => w.weight === selectedWeight) ||
     product.netWeights?.[0];
-  const currentPrice = currentWeightObj?.price || product.price;
-  const originalPriceCalculated = Math.round(currentPrice * 1.25);
+  const currentPrice = currentWeightObj?.price ?? product.price ?? 0;
+  const originalPrice = currentWeightObj?.originalPrice ||
+    (currentPrice === product.price && product.originalPrice
+      ? product.originalPrice
+      : Math.round(currentPrice * 1.25));
 
   const handleCardClick = () => {
     if (onSelect) {
@@ -97,9 +100,11 @@ export const ProductCard = ({ product, onSelect }) => {
           )}
 
           <PriceTag
+            price={currentPrice}
             currentPrice={currentPrice}
-            originalPrice={originalPriceCalculated}
+            originalPrice={originalPrice}
             size="md"
+            showSavings
           />
         </Card.Body>
       </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar.jsx';
 import { Footer } from './components/Footer.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import {
   CartDrawer,
   CheckoutModal,
@@ -12,9 +13,9 @@ import {
 export const RootLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isCheckoutOpen, setIsCheckoutOpen } = useCart();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackedOrderNumber, setTrackedOrderNumber] = useState(undefined);
 

@@ -8,7 +8,6 @@ RUN npm install && ln -s /app/frontend/node_modules /app/node_modules
 
 WORKDIR /app
 COPY frontend ./frontend
-COPY admin-panel ./admin-panel
 
 WORKDIR /app/frontend
 RUN npm run build

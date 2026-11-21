@@ -16,6 +16,7 @@ export const CartDrawer = ({ onProceedToCheckout }) => {
     applyCoupon,
     isCartOpen,
     setIsCartOpen,
+    setIsCheckoutOpen,
   } = useCart();
 
   const [inputCoupon, setInputCoupon] = useState('');
@@ -99,6 +100,7 @@ export const CartDrawer = ({ onProceedToCheckout }) => {
               className="w-full"
               onClick={() => {
                 setIsCartOpen(false);
+                setIsCheckoutOpen(true);
                 onProceedToCheckout?.();
               }}
               rightIcon={<ArrowRight className="w-4 h-4 text-brand-gold" />}

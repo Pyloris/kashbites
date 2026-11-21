@@ -8,18 +8,12 @@ import {
     useDeleteAddressMutation,
     useSetDefaultAddressMutation,
 } from '../services/auth.api.js';
+import { getStoreToken, setStoreToken, clearStoreToken } from '../helpers/helpers.js';
 
 const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(() => {
-        try {
-            return localStorage.getItem('kashbites_auth_token');
-        }
-        catch {
-            return null;
-        }
-    });
+    const [token, setToken] = useState(() => getStoreToken());
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     const {
@@ -36,7 +30,7 @@ export const AuthProvider = ({ children }) => {
         } else if (isGetMeError) {
             setUser(null);
             setToken(null);
-            localStorage.removeItem('kashbites_auth_token');
+            clearStoreToken();
         } else if (!token) {
             setUser(null);
         }
@@ -57,7 +51,7 @@ export const AuthProvider = ({ children }) => {
             if (res.success && res.data) {
                 setUser(res.data);
                 setToken(res.token);
-                localStorage.setItem('kashbites_auth_token', res.token);
+                setStoreToken(res.token);
                 setIsAuthModalOpen(false);
                 return { success: true };
             }
@@ -73,7 +67,7 @@ export const AuthProvider = ({ children }) => {
             if (res.success && res.data) {
                 setUser(res.data);
                 setToken(res.token);
-                localStorage.setItem('kashbites_auth_token', res.token);
+                setStoreToken(res.token);
                 setIsAuthModalOpen(false);
                 return { success: true };
             }
@@ -86,7 +80,7 @@ export const AuthProvider = ({ children }) => {
     const logout = () => {
         setUser(null);
         setToken(null);
-        localStorage.removeItem('kashbites_auth_token');
+        clearStoreToken();
     };
 
     const updateProfile = async (userData) => {

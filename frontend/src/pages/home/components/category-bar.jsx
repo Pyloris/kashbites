@@ -9,7 +9,6 @@ export const CategoryBar = ({
   onSortChange,
 }) => {
   const tabItems = [
-    { id: 'all', label: 'All Dry Fruits' },
     ...categories.map((c) => ({
       id: c.slug || c.id || c.name.toLowerCase(),
       label: c.name,

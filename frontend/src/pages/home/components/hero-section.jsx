@@ -15,7 +15,11 @@ const HERO_SLIDES = [
     originalPrice: '₹2,599',
     badge: 'Signature Royal Box',
     image: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM_2a73fcbc.jpeg',
-    bgTone: 'from-brand-emerald-darker via-brand-emerald-forest to-brand-emerald-darker',
+    heroBg: {
+      desktop: '/assets/hero/hero1.png',
+      tablet: '/assets/hero/hero2.png',
+      mobile: '/assets/hero/hero3.png',
+    },
     ctaText: 'Explore Royal Hamper',
   },
   {
@@ -30,7 +34,11 @@ const HERO_SLIDES = [
     originalPrice: '₹649',
     badge: 'Bestseller Harvest',
     image: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg',
-    bgTone: 'from-brand-emerald-forest via-brand-emerald-dark to-brand-emerald-deep',
+    heroBg: {
+      desktop: '/assets/hero/hero2.png',
+      tablet: '/assets/hero/hero1.png',
+      mobile: '/assets/hero/hero3.png',
+    },
     ctaText: 'Shop Kashmiri Walnuts',
   },
   {
@@ -45,7 +53,11 @@ const HERO_SLIDES = [
     originalPrice: '₹1,999',
     badge: 'Popular Combo',
     image: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.19_PM_fe96f8a7.jpeg',
-    bgTone: 'from-brand-emerald-forest via-brand-emerald to-brand-emerald-deep',
+    heroBg: {
+      desktop: '/assets/hero/hero3.png',
+      tablet: '/assets/hero/hero2.png',
+      mobile: '/assets/hero/hero1.png',
+    },
     ctaText: 'Claim Orchard Trio',
   },
 ];
@@ -55,8 +67,34 @@ export const HeroSection = ({ onExplore, onSelectProduct }) => {
   const slide = HERO_SLIDES[currentSlideIndex];
 
   return (
-    <section className="relative overflow-hidden bg-brand-emerald-darker text-brand-text-light">
-      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(var(--color-brand-gold-bright)_1px,transparent_1px)] [background-size:24px_24px]"></div>
+    <section className="relative overflow-hidden text-brand-text-light">
+      {/* Responsive Hero Background Picture */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <picture className="w-full h-full block">
+          {/* Desktop screens (1024px and wider) */}
+          <source
+            media="(min-width: 1024px)"
+            srcSet={slide.heroBg?.desktop || '/assets/hero/hero1.png'}
+          />
+          {/* Tablet screens (640px to 1023px) */}
+          <source
+            media="(min-width: 640px)"
+            srcSet={slide.heroBg?.tablet || '/assets/hero/hero2.png'}
+          />
+          {/* Mobile screens (<640px) */}
+          <img
+            src={slide.heroBg?.mobile || '/assets/hero/hero3.png'}
+            alt="KashBites Kashmir Valley Harvest"
+            className="w-full h-full object-cover object-center"
+            loading="eager"
+            fetchPriority="high"
+          />
+        </picture>
+
+        {/* Dual-layer scrim overlay to guarantee text legibility & contrast */}
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-emerald-darker/95 via-brand-emerald-darker/85 to-brand-emerald-darker/60 lg:to-brand-emerald-darker/40"></div>
+        <div className="absolute inset-0 bg-black/40"></div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">

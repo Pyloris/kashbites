@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { appConfig } from '../config/app-config.js';
+import { getStoreToken } from '../helpers/helpers.js';
 
 export const baseApi = createApi({
   reducerPath: 'api',
@@ -7,7 +8,7 @@ export const baseApi = createApi({
     baseUrl: appConfig.api.baseUrl,
     prepareHeaders: (headers) => {
       try {
-        const token = localStorage.getItem(appConfig.storage.authTokenKey);
+        const token = getStoreToken();
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         }
@@ -20,3 +21,4 @@ export const baseApi = createApi({
   tagTypes: ['Product', 'Category', 'Order', 'User', 'Review'],
   endpoints: () => ({}),
 });
+

@@ -59,11 +59,11 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
       <HeroSection onExplore={handleHeroExplore} onSelectProduct={handleSelectProduct} />
 
       {/* 2. Trust Pillars Bar */}
-      <TrustSection />
+      {/* <TrustSection /> */}
 
       {/* 3. Products, Offers & Categories Section */}
       <section id="products-section" className="py-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        {/* <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <SectionHeader
             eyebrow="Fresh 2026 Valley Harvest"
             title="Explore Authentic Kashmiri Dry Fruits"
@@ -73,7 +73,7 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
           <p className="text-xs sm:text-sm text-brand-text-muted max-w-md">
             Handpicked from the orchards of Shopian, Pulwama, and Ganderbal. Cold-vacuum packed in Srinagar with certified zero-bleach purity.
           </p>
-        </div>
+        </div> */}
 
         <CategoryBar
           categories={categories}

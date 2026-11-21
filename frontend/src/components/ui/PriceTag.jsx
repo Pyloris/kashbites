@@ -5,12 +5,15 @@ import React from 'react';
  */
 export const PriceTag = ({
   price,
+  currentPrice,
   originalPrice,
   currency = '₹',
   size = 'md',
   showSavings = false,
   className = '',
+  taxesNote = '',
 }) => {
+  const finalPrice = price ?? currentPrice ?? 0;
   const sizes = {
     sm: {
       price: 'text-sm font-bold',
@@ -36,26 +39,34 @@ export const PriceTag = ({
 
   const currentSize = sizes[size] || sizes.md;
   const savingsPercent =
-    originalPrice && originalPrice > price
-      ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    originalPrice && originalPrice > finalPrice
+      ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100)
       : 0;
 
   return (
-    <div className={`inline-flex items-baseline gap-2 ${className}`}>
-      <span className={`${currentSize.price} text-brand-emerald-dark font-mono tabular-nums tracking-tight`}>
-        <span className={`${currentSize.currency} font-sans mr-0.5`}>{currency}</span>
-        {price}
-      </span>
-
-      {originalPrice && originalPrice > price && (
-        <span className={`${currentSize.original} text-slate-400 line-through font-mono`}>
-          {currency}{originalPrice}
+    <div className={`inline-flex flex-col ${className}`}>
+      <div className="inline-flex items-baseline gap-2">
+        <span className={`${currentSize.price} text-brand-emerald-dark font-mono tabular-nums tracking-tight`}>
+          <span className={`${currentSize.currency} font-sans mr-0.5`}>{currency}</span>
+          {finalPrice}
         </span>
-      )}
 
-      {showSavings && savingsPercent > 0 && (
-        <span className="text-[10px] font-bold bg-brand-gold text-brand-emerald-deep px-1.5 py-0.5 rounded shadow-2xs">
-          Save {savingsPercent}%
+        {originalPrice && originalPrice > finalPrice && (
+          <span className={`${currentSize.original} text-slate-400 line-through font-mono`}>
+            {currency}{originalPrice}
+          </span>
+        )}
+
+        {showSavings && savingsPercent > 0 && (
+          <span className="text-[10px] font-bold bg-brand-gold text-brand-emerald-deep px-1.5 py-0.5 rounded shadow-2xs">
+            Save {savingsPercent}%
+          </span>
+        )}
+      </div>
+
+      {taxesNote && (
+        <span className="text-[11px] text-brand-text-muted mt-0.5">
+          {taxesNote}
         </span>
       )}
     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout.jsx';
 import { AdminLayout } from '../layouts/AdminLayout.jsx';
 import {
@@ -14,6 +14,17 @@ import {
   TermsPage,
   NotFoundPage,
 } from '../pages/index.js';
+import {
+  AdminAuthPage,
+  AdminDashboardPage,
+  AdminInventoryPage,
+  AdminCategoriesPage,
+  AdminCouponsPage,
+  AdminOrdersPage,
+  AdminUsersPage,
+  AdminWebhooksPage,
+  AdminAuthProvider,
+} from '../pages/admin/index.js';
 
 export const routes = [
   {
@@ -79,10 +90,66 @@ export const routes = [
     element: <AdminLayout />,
     children: [
       {
+        index: true,
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: 'dashboard',
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: 'inventory',
+        element: <AdminInventoryPage />,
+      },
+      {
+        path: 'products',
+        element: <AdminInventoryPage />,
+      },
+      {
+        path: 'categories',
+        element: <AdminCategoriesPage />,
+      },
+      {
+        path: 'coupons',
+        element: <AdminCouponsPage />,
+      },
+      {
+        path: 'offers',
+        element: <AdminCouponsPage />,
+      },
+      {
+        path: 'orders',
+        element: <AdminOrdersPage />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsersPage />,
+      },
+      {
+        path: 'customers',
+        element: <AdminUsersPage />,
+      },
+      {
+        path: 'webhooks',
+        element: <AdminWebhooksPage />,
+      },
+      {
         path: '*',
-        element: null,
+        element: <Navigate to="/admin/dashboard" replace />,
       },
     ],
+  },
+  {
+    path: '/admin/auth',
+    element: (
+      <AdminAuthProvider>
+        <AdminAuthPage />
+      </AdminAuthProvider>
+    ),
+  },
+  {
+    path: '/admin/login',
+    element: <Navigate to="/admin/auth" replace />,
   },
 ];
 

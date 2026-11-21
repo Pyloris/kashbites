@@ -125,21 +125,6 @@ services:
     networks:
       - kashbites-network
 
-  # React Admin Panel Service
-  admin-panel:
-    build:
-      context: ./admin-panel
-      dockerfile: Dockerfile
-    container_name: kashbites-admin-panel
-    restart: always
-    environment:
-      VITE_API_BASE_URL: /api
-      VITE_MINIO_PUBLIC_URL: /kashbites-media
-    depends_on:
-      - backend
-    networks:
-      - kashbites-network
-
 volumes:
   mongodb_data:
     driver: local
