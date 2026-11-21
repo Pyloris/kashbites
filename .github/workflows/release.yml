@@ -84,6 +84,33 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script_stop: true
           script: |
+            # 1. Ensure full system PATH including snap, local, and system binaries
+            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$HOME/.local/bin:$PATH"
+            [ -f ~/.profile ] && . ~/.profile 2>/dev/null || true
+            [ -f ~/.bashrc ] && . ~/.bashrc 2>/dev/null || true
+
+            # 2. Locate docker if not found in default PATH
+            if ! command -v docker >/dev/null 2>&1; then
+              for bin_path in /usr/bin/docker /usr/local/bin/docker /snap/bin/docker /bin/docker; do
+                if [ -x "$bin_path" ]; then
+                  export PATH="$(dirname "$bin_path"):$PATH"
+                  break
+                fi
+              done
+            fi
+
+            # 3. Detect compose command
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            else
+              echo "Error: Docker command not found. Current PATH: $PATH"
+              which docker || true
+              exit 1
+            fi
+
+            # 4. Navigate to kashbites repository
             if [ -d "$HOME/kashbites" ]; then
               cd "$HOME/kashbites"
             elif [ -d "/mnt/localdisk/projects/kashbites" ]; then
@@ -94,6 +121,6 @@ jobs:
               cd "$(find / -maxdepth 3 -type d -name kashbites 2>/dev/null | head -n 1)" || cd kashbites
             fi
 
-            echo "Deploying in $(pwd)..."
-            docker compose pull
-            docker compose up -d
+            echo "Deploying in $(pwd) using '$COMPOSE_CMD'..."
+            $COMPOSE_CMD pull
+            $COMPOSE_CMD up -d
