@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
+  UserCheck,
 } from 'lucide-react';
 import { adminApi } from '../../../services/admin.api.js';
 import { AdminHeader } from '../components/AdminHeader.jsx';
@@ -115,6 +116,26 @@ export const AdminDashboardPage = () => {
               Management Modules
             </h3>
             <div className="space-y-2">
+              <button
+                onClick={() => navigate('/prelaunch/admin/leads')}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-brand-emerald-tint flex items-center justify-center text-brand-emerald">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-brand-text-display block group-hover:text-brand-emerald">
+                      VIP Prelaunch Leads
+                    </span>
+                    <span className="text-[11px] text-brand-text-muted">
+                      View early subscribers, copy phone numbers & WhatsApp
+                    </span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-brand-emerald opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+
               <button
                 onClick={() => navigate('/prelaunch/admin/inventory')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"

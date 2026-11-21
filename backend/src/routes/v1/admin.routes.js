@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AdminController } from '../../controllers/admin.controller.js';
+import { PrelaunchController } from '../../controllers/prelaunch.controller.js';
 
 const router = Router();
 
@@ -45,5 +46,10 @@ router.post('/orders/:id/cancel', AdminController.adminCancelOrder);
 // 8. Customer Accounts & Password Management
 router.get('/users', AdminController.adminGetUsers);
 router.put('/users/:id/password', AdminController.adminUpdateUserPassword);
+
+// 9. Prelaunch VIP Leads Management
+router.get('/leads', PrelaunchController.getLeads);
+router.patch('/leads/:id/status', PrelaunchController.updateLeadStatus);
+router.delete('/leads/:id', PrelaunchController.deleteLead);
 
 export default router;

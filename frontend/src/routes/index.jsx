@@ -23,6 +23,7 @@ import {
   AdminCouponsPage,
   AdminOrdersPage,
   AdminUsersPage,
+  AdminLeadsPage,
   AdminWebhooksPage,
   AdminAuthProvider,
 } from '../pages/admin/index.js';
@@ -100,6 +101,14 @@ export const routes = [
       {
         path: 'dashboard',
         element: <AdminDashboardPage />,
+      },
+      {
+        path: 'leads',
+        element: <AdminLeadsPage />,
+      },
+      {
+        path: 'prelaunch-leads',
+        element: <AdminLeadsPage />,
       },
       {
         path: 'inventory',

@@ -2,12 +2,16 @@
  * KashBites Frontend Application Configuration
  */
 
-const isLocal = import.meta.env.VITE_IS_LOCAL === 'true' || import.meta.env.VITE_IS_LOCAL === true;
+const isLocal =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_IS_LOCAL === 'true') ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_IS_LOCAL === true);
 
 export const appConfig = {
   // API Configuration
   api: {
-    baseUrl: import.meta.env.VITE_API_BASE_URL || (isLocal ? 'http://localhost:5000/api' : 'https://kashbites.com/api'),
+    baseUrl:
+      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+      (isLocal ? 'http://localhost:5000/api' : 'https://kashbites.com/api'),
     timeout: 15000,
   },
 

@@ -11,6 +11,7 @@ import {
     dispatchOutboundOrderWebhook,
 } from '../data/store.js';
 import { ApiError } from '../errors/api-error.js';
+import { PrelaunchLead } from '../database/models/prelaunch-leads.model.js';
 
 const formatProductForAdmin = (p) => ({
     ...p,
@@ -85,6 +86,7 @@ export class AdminService {
             .reduce((acc, o) => acc + (Number(o.total ?? o.totalAmount) || 0), 0);
         const totalUsers = usersStore.length;
         const activeCoupons = couponsStore.filter((c) => c.isActive).length;
+        const totalPrelaunchLeads = await PrelaunchLead.countDocuments().catch(() => 0);
 
         return {
             totalProducts,
@@ -95,6 +97,7 @@ export class AdminService {
             totalRevenue,
             totalUsers,
             activeCoupons,
+            totalPrelaunchLeads,
             webhookEnabled: shippingConfigStore.isEnabled,
             recentWebhooksCount: webhookLogsStore.length,
         };

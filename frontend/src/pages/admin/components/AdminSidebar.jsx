@@ -7,6 +7,7 @@ import {
   Tag,
   ShoppingBag,
   Users,
+  UserCheck,
   Truck,
   Store,
   LogOut,
@@ -17,6 +18,7 @@ import { Logo } from '../../../components/ui/index.js';
 
 const NAV_ITEMS = [
   { to: '/prelaunch/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/prelaunch/admin/leads', label: 'VIP Prelaunch Leads', icon: UserCheck },
   { to: '/prelaunch/admin/inventory', label: 'Products & Stock', icon: Package },
   { to: '/prelaunch/admin/categories', label: 'Categories', icon: Layers },
   { to: '/prelaunch/admin/coupons', label: 'Coupons & Offers', icon: Tag },

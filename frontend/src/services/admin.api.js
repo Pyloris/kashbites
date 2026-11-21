@@ -45,6 +45,7 @@ export const adminApi = createApi({
     'AdminOrders',
     'AdminUsers',
     'AdminWebhooks',
+    'AdminLeads',
   ],
   endpoints: (builder) => ({
     // Auth
@@ -263,6 +264,30 @@ export const adminApi = createApi({
         };
       },
     }),
+
+    // Prelaunch VIP Leads
+    getAdminLeads: builder.query({
+      query: (params = {}) => ({
+        url: '/prelaunch/leads',
+        params,
+      }),
+      providesTags: ['AdminLeads'],
+    }),
+    updateAdminLeadStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `/prelaunch/leads/${id}/status`,
+        method: 'PATCH',
+        body: { status },
+      }),
+      invalidatesTags: ['AdminLeads', 'AdminStats'],
+    }),
+    deleteAdminLead: builder.mutation({
+      query: (id) => ({
+        url: `/prelaunch/leads/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['AdminLeads', 'AdminStats'],
+    }),
   }),
 });
 
@@ -295,6 +320,97 @@ export const {
   useGetAdminUsersQuery,
   useUpdateAdminUserPasswordMutation,
   useUploadAdminMediaMutation,
+  useGetAdminLeadsQuery,
+  useUpdateAdminLeadStatusMutation,
+  useDeleteAdminLeadMutation,
 } = adminApi;
+
+// Internal fetch helper for direct async method invocations
+const adminFetch = async (endpoint, options = {}) => {
+  const token = getAdminToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+  const url = `${appConfig.api.baseUrl}${endpoint}`;
+  try {
+    const res = await fetch(url, { ...options, headers });
+    return await res.json();
+  } catch (err) {
+    console.error(`adminFetch error on ${endpoint}:`, err);
+    return { success: false, message: err?.message || 'Network error' };
+  }
+};
+
+// Convenience direct async methods attached directly to adminApi
+adminApi.login = (username, password) =>
+  adminFetch('/admin/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+adminApi.getStats = () => adminFetch('/admin/stats');
+adminApi.getProducts = () => adminFetch('/admin/products');
+adminApi.createProduct = (data) =>
+  adminFetch('/admin/products', { method: 'POST', body: JSON.stringify(data) });
+adminApi.updateProduct = (id, data) =>
+  adminFetch(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+adminApi.deleteProduct = (id) =>
+  adminFetch(`/admin/products/${id}`, { method: 'DELETE' });
+adminApi.toggleProductStock = (id) =>
+  adminFetch(`/admin/products/${id}/stock`, { method: 'PATCH' });
+adminApi.bulkAdjustPrices = (percentage, category) =>
+  adminFetch('/admin/products/bulk-price', { method: 'PUT', body: JSON.stringify({ percentage, category }) });
+adminApi.getCategories = () => adminFetch('/admin/categories');
+adminApi.createCategory = (data) =>
+  adminFetch('/admin/categories', { method: 'POST', body: JSON.stringify(data) });
+adminApi.deleteCategory = (id) =>
+  adminFetch(`/admin/categories/${id}`, { method: 'DELETE' });
+adminApi.getCoupons = () => adminFetch('/admin/coupons');
+adminApi.createCoupon = (data) =>
+  adminFetch('/admin/coupons', { method: 'POST', body: JSON.stringify(data) });
+adminApi.updateCoupon = (id, data) =>
+  adminFetch(`/admin/coupons/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+adminApi.deleteCoupon = (id) =>
+  adminFetch(`/admin/coupons/${id}`, { method: 'DELETE' });
+adminApi.getOffers = () => adminFetch('/admin/offers');
+adminApi.createOffer = (data) =>
+  adminFetch('/admin/offers', { method: 'POST', body: JSON.stringify(data) });
+adminApi.deleteOffer = (id) =>
+  adminFetch(`/admin/offers/${id}`, { method: 'DELETE' });
+adminApi.getOrders = () => adminFetch('/admin/orders');
+adminApi.updateOrderStatus = (id, status, note) =>
+  adminFetch(`/admin/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status, note }) });
+adminApi.cancelOrder = (id, reason) =>
+  adminFetch(`/admin/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
+adminApi.getUsers = () => adminFetch('/admin/users');
+adminApi.updateUserPassword = (id, newPassword) =>
+  adminFetch(`/admin/users/${id}/password`, { method: 'PUT', body: JSON.stringify({ newPassword }) });
+adminApi.getShippingConfig = () => adminFetch('/admin/shipping-config');
+adminApi.updateShippingConfig = (data) =>
+  adminFetch('/admin/shipping-config', { method: 'PUT', body: JSON.stringify(data) });
+adminApi.pushOrderWebhook = (orderId) =>
+  adminFetch(`/admin/shipping-config/push/${orderId}`, { method: 'POST' });
+adminApi.uploadMedia = async (file, folder = 'products') => {
+  const token = getAdminToken();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', folder);
+  try {
+    const res = await fetch(`${appConfig.api.baseUrl}/media/upload`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: err?.message || 'Media upload error' };
+  }
+};
+adminApi.getLeads = (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  return adminFetch(`/prelaunch/leads${qs ? `?${qs}` : ''}`);
+};
+adminApi.updateLeadStatus = (id, status) =>
+  adminFetch(`/prelaunch/leads/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+adminApi.deleteLead = (id) =>
+  adminFetch(`/prelaunch/leads/${id}`, { method: 'DELETE' });
 
 export default adminApi;

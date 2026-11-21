@@ -5,6 +5,7 @@ export { AdminCategoriesPage } from './categories/AdminCategoriesPage.jsx';
 export { AdminCouponsPage } from './coupons/AdminCouponsPage.jsx';
 export { AdminOrdersPage } from './orders/AdminOrdersPage.jsx';
 export { AdminUsersPage } from './users/AdminUsersPage.jsx';
+export { AdminLeadsPage } from './leads/AdminLeadsPage.jsx';
 export { AdminWebhooksPage } from './webhooks/AdminWebhooksPage.jsx';
 export { AdminAuthProvider, useAdminAuth } from './context/AdminAuthContext.jsx';
 export { AdminProtectedRoute } from './components/AdminProtectedRoute.jsx';

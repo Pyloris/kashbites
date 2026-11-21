@@ -51,9 +51,80 @@ export const PrelaunchController = {
     }),
 
     getLeads: catchError(async (req, res) => {
-        const leads = await PrelaunchLead.find().sort({ createdAt: -1 }).limit(200);
-        const count = await PrelaunchLead.countDocuments();
-        return ApiResponse.success(res, { leads, total: count });
+        const { search = '', status = '', limit = 200, page = 1 } = req.query;
+        const query = {};
+
+        if (status && status !== 'all' && status !== 'All') {
+            query.status = status.toLowerCase();
+        }
+
+        if (search && search.trim()) {
+            const term = search.trim();
+            query.$or = [
+                { phone: { $regex: term, $options: 'i' } },
+                { name: { $regex: term, $options: 'i' } },
+                { couponCode: { $regex: term, $options: 'i' } },
+            ];
+        }
+
+        const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 200, 1), 1000);
+        const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
+        const skip = (parsedPage - 1) * parsedLimit;
+
+        const [leads, total, allLeads] = await Promise.all([
+            PrelaunchLead.find(query).sort({ createdAt: -1 }).skip(skip).limit(parsedLimit).lean(),
+            PrelaunchLead.countDocuments(query),
+            PrelaunchLead.find({}, 'name status').lean(),
+        ]);
+
+        const stats = {
+            totalLeads: allLeads.length,
+            withName: allLeads.filter((l) => l.name && l.name.trim().length > 0).length,
+            withoutName: allLeads.filter((l) => !l.name || l.name.trim().length === 0).length,
+            pending: allLeads.filter((l) => !l.status || l.status === 'pending').length,
+            notified: allLeads.filter((l) => l.status === 'notified').length,
+            converted: allLeads.filter((l) => l.status === 'converted').length,
+        };
+
+        return ApiResponse.success(res, {
+            leads,
+            total,
+            page: parsedPage,
+            limit: parsedLimit,
+            stats,
+        });
+    }),
+
+    updateLeadStatus: catchError(async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!status || !['pending', 'notified', 'converted'].includes(status.toLowerCase())) {
+            throw ApiError.badRequest('Invalid status. Allowed values: pending, notified, converted');
+        }
+
+        const lead = await PrelaunchLead.findByIdAndUpdate(
+            id,
+            { status: status.toLowerCase() },
+            { new: true }
+        );
+
+        if (!lead) {
+            throw ApiError.notFound('Lead not found');
+        }
+
+        return ApiResponse.success(res, lead, `Lead status updated to ${status}`);
+    }),
+
+    deleteLead: catchError(async (req, res) => {
+        const { id } = req.params;
+        const lead = await PrelaunchLead.findByIdAndDelete(id);
+
+        if (!lead) {
+            throw ApiError.notFound('Lead not found');
+        }
+
+        return ApiResponse.success(res, { id }, 'Lead deleted successfully');
     }),
 };
 
