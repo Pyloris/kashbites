@@ -1,0 +1,99 @@
+name: Build and Push Release Images to GHCR
+
+'on':
+  push:
+    tags:
+      - 'release/*'
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build & Push Images to GHCR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Metadata and Tags
+        id: meta
+        run: |
+          # Convert repository owner to lowercase for valid docker image tags
+          REPO_OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "owner_lc=${REPO_OWNER_LC}" >> "$GITHUB_OUTPUT"
+          
+          # Extract clean tag name (strip release/ prefix if present)
+          RAW_TAG="${{ github.ref_name }}"
+          CLEAN_TAG=$(echo "${RAW_TAG}" | sed 's|^release/||')
+          echo "tag=${CLEAN_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and Push Backend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/kashbites-backend:latest
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/kashbites-backend:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Frontend Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/kashbites-frontend:latest
+            ghcr.io/${{ steps.meta.outputs.owner_lc }}/kashbites-frontend:${{ steps.meta.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Docker Compose Configuration
+        run: |
+          docker compose -f docker-compose.yml config
+
+  deploy:
+    name: Deploy to Server via SSH
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote Deployment Commands
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            if [ -d "$HOME/kashbites" ]; then
+              cd "$HOME/kashbites"
+            elif [ -d "/mnt/localdisk/projects/kashbites" ]; then
+              cd /mnt/localdisk/projects/kashbites
+            elif [ -d "kashbites" ]; then
+              cd kashbites
+            else
+              cd "$(find / -maxdepth 3 -type d -name kashbites 2>/dev/null | head -n 1)" || cd kashbites
+            fi
+
+            echo "Deploying in $(pwd)..."
+            docker compose pull
+            docker compose up -d

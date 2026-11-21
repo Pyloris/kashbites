@@ -62,9 +62,7 @@ services:
 
   # Node.js + Express Backend Service
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/pyloris/kashbites-backend:latest
     container_name: kashbites-backend
     restart: always
     environment:
@@ -91,9 +89,7 @@ services:
 
   # Background Workers Service (BullMQ consumers)
   workers:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/pyloris/kashbites-backend:latest
     container_name: kashbites-workers
     command: ["node", "src/workers/main.js"]
     restart: always
@@ -110,9 +106,7 @@ services:
 
   # React Storefront Frontend Service (UI)
   frontend:
-    build:
-      context: .
-      dockerfile: ./frontend/Dockerfile
+    image: ghcr.io/pyloris/kashbites-frontend:latest
     container_name: kashbites-frontend
     restart: always
     ports:
