@@ -16,7 +16,7 @@ export const AdminAuthPage = () => {
 
   // If already logged in, redirect to dashboard
   if (isAuthenticated) {
-    const from = location.state?.from?.pathname || '/admin/dashboard';
+    const from = location.state?.from?.pathname || '/prelaunch/admin/dashboard';
     return <Navigate to={from} replace />;
   }
 
@@ -33,7 +33,7 @@ export const AdminAuthPage = () => {
     if (!res.success) {
       setError(res.message || 'Authentication failed. Please verify credentials.');
     } else {
-      const from = location.state?.from?.pathname || '/admin/dashboard';
+      const from = location.state?.from?.pathname || '/prelaunch/admin/dashboard';
       navigate(from, { replace: true });
     }
   };
@@ -126,7 +126,7 @@ export const AdminAuthPage = () => {
           <div className="text-center pt-2 border-t border-brand-sand/60">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/prelaunch')}
               className="text-xs text-brand-emerald hover:underline font-medium cursor-pointer"
             >
               ← Back to Customer Storefront

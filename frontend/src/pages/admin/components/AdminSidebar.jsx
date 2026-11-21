@@ -16,13 +16,13 @@ import { useAdminAuth } from '../context/AdminAuthContext.jsx';
 import { Logo } from '../../../components/ui/index.js';
 
 const NAV_ITEMS = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/admin/inventory', label: 'Products & Stock', icon: Package },
-  { to: '/admin/categories', label: 'Categories', icon: Layers },
-  { to: '/admin/coupons', label: 'Coupons & Offers', icon: Tag },
-  { to: '/admin/orders', label: 'Orders & Fulfillment', icon: ShoppingBag },
-  { to: '/admin/users', label: 'Customer Accounts', icon: Users },
-  { to: '/admin/webhooks', label: 'Shipping Webhooks', icon: Truck },
+  { to: '/prelaunch/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/prelaunch/admin/inventory', label: 'Products & Stock', icon: Package },
+  { to: '/prelaunch/admin/categories', label: 'Categories', icon: Layers },
+  { to: '/prelaunch/admin/coupons', label: 'Coupons & Offers', icon: Tag },
+  { to: '/prelaunch/admin/orders', label: 'Orders & Fulfillment', icon: ShoppingBag },
+  { to: '/prelaunch/admin/users', label: 'Customer Accounts', icon: Users },
+  { to: '/prelaunch/admin/webhooks', label: 'Shipping Webhooks', icon: Truck },
 ];
 
 export const AdminSidebar = () => {
@@ -31,7 +31,7 @@ export const AdminSidebar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/admin/auth');
+    navigate('/prelaunch/admin/auth');
   };
 
   return (
@@ -93,7 +93,7 @@ export const AdminSidebar = () => {
 
         <div className="flex items-center gap-2 pt-1">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/prelaunch')}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-emerald-dark hover:bg-brand-emerald text-brand-sand-light text-[11px] font-medium border border-brand-emerald/50 transition-colors cursor-pointer"
             title="Open customer storefront"
           >

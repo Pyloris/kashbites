@@ -19,7 +19,7 @@ import {
 export const UserProfilePage = ({ onBackToShop, onTrackOrder }) => {
   const navigate = useNavigate();
   const outletContext = useOutletContext() || {};
-  const handleBackToShop = onBackToShop || outletContext.onBackToShop || (() => navigate('/'));
+  const handleBackToShop = onBackToShop || outletContext.onBackToShop || (() => navigate('/prelaunch'));
   const handleTrackOrder = onTrackOrder || outletContext.openTracking || (() => {});
 
   const { user, updateProfile, addAddress, deleteAddress, setDefaultAddress, logout } = useAuth();

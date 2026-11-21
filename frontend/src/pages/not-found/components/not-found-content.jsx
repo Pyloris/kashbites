@@ -32,7 +32,7 @@ export const NotFoundContent = () => {
         >
           Go Back
         </Button>
-        <Link to="/" className="w-full sm:w-auto">
+        <Link to="/prelaunch" className="w-full sm:w-auto">
           <Button
             variant="primary"
             size="md"

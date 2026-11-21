@@ -116,7 +116,7 @@ export const AdminDashboardPage = () => {
             </h3>
             <div className="space-y-2">
               <button
-                onClick={() => navigate('/admin/inventory')}
+                onClick={() => navigate('/prelaunch/admin/inventory')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"
               >
                 <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ export const AdminDashboardPage = () => {
               </button>
 
               <button
-                onClick={() => navigate('/admin/orders')}
+                onClick={() => navigate('/prelaunch/admin/orders')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"
               >
                 <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export const AdminDashboardPage = () => {
               </button>
 
               <button
-                onClick={() => navigate('/admin/webhooks')}
+                onClick={() => navigate('/prelaunch/admin/webhooks')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"
               >
                 <div className="flex items-center gap-3">
@@ -176,7 +176,7 @@ export const AdminDashboardPage = () => {
               </button>
 
               <button
-                onClick={() => navigate('/admin/coupons')}
+                onClick={() => navigate('/prelaunch/admin/coupons')}
                 className="w-full flex items-center justify-between p-3 rounded-xl border border-brand-sand/60 hover:bg-brand-emerald-tint/50 transition-colors cursor-pointer group text-left"
               >
                 <div className="flex items-center gap-3">
@@ -204,7 +204,7 @@ export const AdminDashboardPage = () => {
                 Recent Orders
               </h3>
               <button
-                onClick={() => navigate('/admin/orders')}
+                onClick={() => navigate('/prelaunch/admin/orders')}
                 className="text-xs text-brand-emerald hover:underline font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <span>View All Orders</span>

@@ -131,7 +131,7 @@ export const CatalogPage = () => {
         <CatalogGrid
           products={products}
           isLoading={isLoading}
-          onSelectProduct={(id) => navigate(`/product/${id}`)}
+          onSelectProduct={(id) => navigate(`/prelaunch/product/${id}`)}
           onResetFilters={handleResetFilters}
         />
       </div>

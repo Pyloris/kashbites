@@ -23,38 +23,38 @@ export const RootLayout = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
-  const currentView = location.pathname.startsWith('/profile')
+  const currentView = location.pathname.startsWith('/prelaunch/profile')
     ? 'profile'
-    : location.pathname.startsWith('/settings')
+    : location.pathname.startsWith('/prelaunch/settings')
     ? 'settings'
-    : location.pathname.startsWith('/catalog')
+    : location.pathname.startsWith('/prelaunch/catalog')
     ? 'catalog'
-    : location.pathname.startsWith('/product')
+    : location.pathname.startsWith('/prelaunch/product')
     ? 'product'
-    : location.pathname === '/'
+    : location.pathname === '/prelaunch' || location.pathname === '/prelaunch/'
     ? 'home'
     : 'other';
 
   const handleNavigate = (view, param) => {
     if (view === 'admin') {
-      navigate('/admin');
+      navigate('/prelaunch/admin');
     } else if (view === 'profile') {
-      navigate('/profile');
+      navigate('/prelaunch/profile');
     } else if (view === 'settings') {
-      navigate('/settings');
+      navigate('/prelaunch/settings');
     } else if (view === 'about') {
-      navigate('/about');
+      navigate('/prelaunch/about');
     } else if (view === 'contact') {
-      navigate('/contact');
+      navigate('/prelaunch/contact');
     } else if (view === 'privacy') {
-      navigate('/privacy-policy');
+      navigate('/prelaunch/privacy-policy');
     } else if (view === 'terms') {
-      navigate('/terms');
+      navigate('/prelaunch/terms');
     } else if (view === 'home') {
-      navigate('/');
+      navigate('/prelaunch');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (view === 'catalog') {
-      navigate(param ? `/catalog?category=${param}` : '/catalog');
+      navigate(param ? `/prelaunch/catalog?category=${param}` : '/prelaunch/catalog');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };

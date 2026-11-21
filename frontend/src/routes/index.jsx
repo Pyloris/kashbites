@@ -13,6 +13,7 @@ import {
   PrivacyPolicyPage,
   TermsPage,
   NotFoundPage,
+  LaunchingScreen,
 } from '../pages/index.js';
 import {
   AdminAuthPage,
@@ -27,8 +28,9 @@ import {
 } from '../pages/admin/index.js';
 
 export const routes = [
+  // 1. Secret / Internal Testing Storefront Routes mounted at /prelaunch
   {
-    path: '/',
+    path: '/prelaunch',
     element: <RootLayout />,
     children: [
       {
@@ -85,8 +87,10 @@ export const routes = [
       },
     ],
   },
+
+  // 2. Secret / Internal Testing Admin Routes mounted at /prelaunch/admin
   {
-    path: '/admin',
+    path: '/prelaunch/admin',
     element: <AdminLayout />,
     children: [
       {
@@ -135,12 +139,12 @@ export const routes = [
       },
       {
         path: '*',
-        element: <Navigate to="/admin/dashboard" replace />,
+        element: <Navigate to="/prelaunch/admin/dashboard" replace />,
       },
     ],
   },
   {
-    path: '/admin/auth',
+    path: '/prelaunch/admin/auth',
     element: (
       <AdminAuthProvider>
         <AdminAuthPage />
@@ -148,8 +152,20 @@ export const routes = [
     ),
   },
   {
-    path: '/admin/login',
-    element: <Navigate to="/admin/auth" replace />,
+    path: '/prelaunch/admin/login',
+    element: <Navigate to="/prelaunch/admin/auth" replace />,
+  },
+
+  // 3. Public Pre-Launch Gateway: Render Launching Screen at /
+  {
+    path: '/',
+    element: <LaunchingScreen />,
+  },
+
+  // 4. Any other non-prelaunch route renders the Launching Screen so outsiders cannot visit storefront/admin
+  {
+    path: '*',
+    element: <LaunchingScreen />,
   },
 ];
 

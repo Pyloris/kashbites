@@ -8,16 +8,16 @@ export const Footer = ({ onNavigate, onOpenTracking }) => {
   const handleNav =
     onNavigate ||
     ((view, param) => {
-      if (view === 'admin') navigate('/admin');
-      else if (view === 'profile') navigate('/profile');
-      else if (view === 'settings') navigate('/settings');
-      else if (view === 'about') navigate('/about');
-      else if (view === 'contact') navigate('/contact');
-      else if (view === 'privacy') navigate('/privacy-policy');
-      else if (view === 'terms') navigate('/terms');
-      else if (view === 'home') navigate('/');
+      if (view === 'admin') navigate('/prelaunch/admin');
+      else if (view === 'profile') navigate('/prelaunch/profile');
+      else if (view === 'settings') navigate('/prelaunch/settings');
+      else if (view === 'about') navigate('/prelaunch/about');
+      else if (view === 'contact') navigate('/prelaunch/contact');
+      else if (view === 'privacy') navigate('/prelaunch/privacy-policy');
+      else if (view === 'terms') navigate('/prelaunch/terms');
+      else if (view === 'home') navigate('/prelaunch');
       else if (view === 'catalog') {
-        navigate(param ? `/catalog?category=${param}` : '/catalog');
+        navigate(param ? `/prelaunch/catalog?category=${param}` : '/prelaunch/catalog');
       }
     });
 
@@ -97,12 +97,12 @@ export const Footer = ({ onNavigate, onOpenTracking }) => {
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/about" className="hover:text-brand-gold transition-colors">
+                <Link to="/prelaunch/about" className="hover:text-brand-gold transition-colors">
                   Our Provenance Story
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-white transition-colors">
+                <Link to="/prelaunch/contact" className="hover:text-white transition-colors">
                   Contact Srinagar Hub
                 </Link>
               </li>
@@ -115,12 +115,12 @@ export const Footer = ({ onNavigate, onOpenTracking }) => {
                 </button>
               </li>
               <li>
-                <Link to="/privacy-policy" className="hover:text-white transition-colors">
+                <Link to="/prelaunch/privacy-policy" className="hover:text-white transition-colors">
                   Privacy & Data Policy
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="hover:text-white transition-colors">
+                <Link to="/prelaunch/terms" className="hover:text-white transition-colors">
                   Terms & 100% Guarantee
                 </Link>
               </li>
@@ -159,9 +159,9 @@ export const Footer = ({ onNavigate, onOpenTracking }) => {
             <span>·</span>
             <span className="text-brand-gold">FSSAI Lic. No: 11026999000142</span>
             <span>·</span>
-            <Link to="/privacy-policy" className="hover:underline">Privacy</Link>
+            <Link to="/prelaunch/privacy-policy" className="hover:underline">Privacy</Link>
             <span>·</span>
-            <Link to="/terms" className="hover:underline">Terms</Link>
+            <Link to="/prelaunch/terms" className="hover:underline">Terms</Link>
           </div>
 
           <div className="flex items-center gap-4">

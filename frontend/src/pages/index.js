@@ -8,3 +8,4 @@ export { ContactPage } from './contact/contact-page.jsx';
 export { PrivacyPolicyPage } from './privacy-policy/privacy-policy-page.jsx';
 export { TermsPage } from './terms/terms-page.jsx';
 export { NotFoundPage } from './not-found/not-found-page.jsx';
+export { LaunchingScreen } from './launching/LaunchingScreen.jsx';

@@ -16,31 +16,39 @@ export const Navbar = ({
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const currentCategory = searchParams.get('category');
-  const isCatalog = location.pathname.startsWith('/catalog') || currentView === 'catalog';
+  const isCatalog =
+    location.pathname.startsWith('/prelaunch/catalog') ||
+    location.pathname.startsWith('/catalog') ||
+    currentView === 'catalog';
 
   const activeView =
     currentView ||
-    (location.pathname.startsWith('/profile')
+    (location.pathname.startsWith('/prelaunch/profile') || location.pathname.startsWith('/profile')
       ? 'profile'
-      : location.pathname.startsWith('/product')
+      : location.pathname.startsWith('/prelaunch/product') || location.pathname.startsWith('/product')
       ? 'product'
       : isCatalog
       ? 'catalog'
       : 'home');
 
-  const isHomeActive = activeView === 'home' && (!location.pathname || location.pathname === '/');
+  const isHomeActive =
+    activeView === 'home' &&
+    (!location.pathname ||
+      location.pathname === '/prelaunch' ||
+      location.pathname === '/prelaunch/' ||
+      location.pathname === '/');
   const isCategoryActive = (category) =>
     activeView === category || (isCatalog && currentCategory === category);
 
   const handleNav =
     onNavigate ||
     ((view, param) => {
-      if (view === 'admin') navigate('/admin');
-      else if (view === 'profile') navigate('/profile');
-      else if (view === 'settings') navigate('/settings');
-      else if (view === 'home') navigate('/');
+      if (view === 'admin') navigate('/prelaunch/admin');
+      else if (view === 'profile') navigate('/prelaunch/profile');
+      else if (view === 'settings') navigate('/prelaunch/settings');
+      else if (view === 'home') navigate('/prelaunch');
       else if (view === 'catalog') {
-        navigate(param ? `/catalog?category=${param}` : '/catalog');
+        navigate(param ? `/prelaunch/catalog?category=${param}` : '/prelaunch/catalog');
       }
     });
 

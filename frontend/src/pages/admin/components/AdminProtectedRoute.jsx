@@ -7,7 +7,7 @@ export const AdminProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/admin/auth" state={{ from: location }} replace />;
+    return <Navigate to="/prelaunch/admin/auth" state={{ from: location }} replace />;
   }
 
   return children;

@@ -34,7 +34,7 @@ export const AdminHeader = ({ title, subtitle, onRefresh, isRefreshing = false, 
         {actions}
 
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/prelaunch')}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-emerald-tint text-brand-emerald hover:bg-brand-emerald hover:text-white border border-brand-emerald/20 text-xs font-semibold transition-all cursor-pointer"
         >
           <Store className="w-3.5 h-3.5" />

@@ -42,7 +42,7 @@ export const UserSettingsPage = () => {
         <p className="text-xs text-brand-text-muted mb-6">
           Please sign in to manage your account settings, addresses, and delivery preferences.
         </p>
-        <Button variant="primary" size="md" onClick={() => navigate('/')}>
+        <Button variant="primary" size="md" onClick={() => navigate('/prelaunch')}>
           Return to Storefront
         </Button>
       </div>
@@ -78,7 +78,7 @@ export const UserSettingsPage = () => {
             />
           </div>
 
-          <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+          <Button variant="outline" size="sm" onClick={() => navigate('/prelaunch/profile')}>
             View Order History
           </Button>
         </div>

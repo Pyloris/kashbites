@@ -19,7 +19,7 @@ export const AboutCta = () => {
         <Button
           variant="gold"
           size="lg"
-          onClick={() => navigate('/catalog')}
+          onClick={() => navigate('/prelaunch/catalog')}
         >
           Explore Fresh Harvest Catalog
         </Button>

@@ -1,0 +1,561 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Sparkles,
+  CheckCircle2,
+  Phone,
+  ArrowRight,
+  ShieldCheck,
+  Award,
+  Lock,
+  Copy,
+  Check,
+  Share2,
+  Heart,
+  Clock,
+  Package,
+  ExternalLink,
+  ChevronRight,
+} from 'lucide-react';
+import { Logo } from '../../components/ui/index.js';
+import { appConfig } from '../../config/app-config.js';
+
+const COUNTRY_CODES = [
+  { code: '+91', label: '🇮🇳 +91', minDigits: 10, maxDigits: 10 },
+  { code: '+971', label: '🇦🇪 +971', minDigits: 9, maxDigits: 9 },
+  { code: '+1', label: '🇺🇸 +1', minDigits: 10, maxDigits: 10 },
+  { code: '+44', label: '🇬🇧 +44', minDigits: 10, maxDigits: 11 },
+  { code: '+966', label: '🇸🇦 +966', minDigits: 9, maxDigits: 9 },
+];
+
+const HARVEST_PREVIEWS = [
+  {
+    name: 'Kagzi Walnuts',
+    origin: 'Shopian Orchards',
+    highlight: '68% Omega-3 Oil',
+  },
+  {
+    name: 'Mamra Badam',
+    origin: 'Pulwama Groves',
+    highlight: 'Single-Origin Reserve',
+  },
+  {
+    name: 'Sun-Dried Khubani',
+    origin: 'Ladakh Valley',
+    highlight: 'Zero Sulphur Bleach',
+  },
+  {
+    name: 'Emerald Hamper',
+    origin: 'Srinagar Atelier',
+    highlight: '6 Hermetic Jars',
+  },
+];
+
+export const LaunchingScreen = () => {
+  const navigate = useNavigate();
+
+  // Country and Form States
+  const [countryCode, setCountryCode] = useState('+91');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [visitorName, setVisitorName] = useState('');
+  const [selectedInterest, setSelectedInterest] = useState('All Harvest');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [couponCode, setCouponCode] = useState('KASHLAUNCH20');
+
+  // Launch Countdown State
+  const [timeLeft, setTimeLeft] = useState({
+    days: 12,
+    hours: 18,
+    minutes: 42,
+    seconds: 15,
+  });
+
+  // Check if previously submitted in this browser
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('kashbites_prelaunch_lead');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.couponCode) {
+          setCouponCode(parsed.couponCode);
+          setIsSubmitted(true);
+          if (parsed?.phone) setPhoneNumber(parsed.phone);
+        }
+      }
+    } catch {
+      // ignore localStorage reading errors
+    }
+  }, []);
+
+  // Countdown clock effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) {
+          return { ...prev, seconds: prev.seconds - 1 };
+        } else if (prev.minutes > 0) {
+          return { ...prev, minutes: 59, seconds: 59 };
+        } else if (prev.hours > 0) {
+          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        } else if (prev.days > 0) {
+          return { ...prev, days: prev.days - 1, hours: 23, minutes: 59, seconds: 59 };
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Handle Form Submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    const cleanDigits = phoneNumber.replace(/[^0-9]/g, '');
+    if (!cleanDigits || cleanDigits.length < 8) {
+      setErrorMessage('Please enter a valid WhatsApp mobile number.');
+      return;
+    }
+
+    if (countryCode === '+91' && cleanDigits.length !== 10) {
+      setErrorMessage('Please enter a 10-digit Indian mobile number.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const apiEndpoint = `${appConfig.api.baseUrl}/prelaunch/lead`;
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: cleanDigits,
+          countryCode,
+          name: visitorName.trim(),
+          source: 'launching_screen',
+          interest: selectedInterest,
+        }),
+      });
+
+      const data = await response.json();
+      const code = data?.data?.couponCode || 'KASHLAUNCH20';
+      setCouponCode(code);
+      setIsSubmitted(true);
+
+      // Save to localStorage
+      try {
+        localStorage.setItem(
+          'kashbites_prelaunch_lead',
+          JSON.stringify({
+            phone: `${countryCode}${cleanDigits}`,
+            name: visitorName,
+            couponCode: code,
+            timestamp: new Date().toISOString(),
+          })
+        );
+      } catch {
+        // localStorage not available
+      }
+    } catch (err) {
+      console.warn('Backend lead submission fallback:', err);
+      setCouponCode('KASHLAUNCH20');
+      setIsSubmitted(true);
+      try {
+        localStorage.setItem(
+          'kashbites_prelaunch_lead',
+          JSON.stringify({
+            phone: `${countryCode}${cleanDigits}`,
+            name: visitorName,
+            couponCode: 'KASHLAUNCH20',
+            timestamp: new Date().toISOString(),
+          })
+        );
+      } catch {
+        // ignore
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyCoupon = () => {
+    navigator.clipboard.writeText(couponCode);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2500);
+  };
+
+  const shareText = encodeURIComponent(
+    `Exclusive Prelaunch Access: Get 20% OFF authentic Himalayan walnuts, Mamra almonds & dry fruits from KashBites! Register for your WhatsApp launch coupon: ${window.location.origin}`
+  );
+
+  return (
+    <div className="h-screen h-dvh max-h-screen w-screen overflow-hidden bg-brand-emerald-darker text-brand-sand-light font-sans selection:bg-brand-gold selection:text-brand-emerald-deep relative flex flex-col justify-between">
+      {/* Background Ambience & Kashmiri Atmospheric Glow */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {/* Subtle Himalayan mountain silhouette / hero texture at very low opacity */}
+        <div
+          className="absolute inset-0 opacity-[0.06] bg-cover bg-center"
+          style={{ backgroundImage: `url('/assets/hero/hero1.png')` }}
+        ></div>
+        <div className="absolute -top-32 -left-32 w-80 h-80 bg-brand-emerald/40 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/4 -right-32 w-96 h-96 bg-brand-gold/15 rounded-full blur-[100px]"></div>
+        <div className="absolute -bottom-32 left-1/3 w-[500px] h-[500px] bg-brand-emerald/30 rounded-full blur-[120px]"></div>
+        {/* Subtle radial pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, #DFB248 1px, transparent 0)`,
+            backgroundSize: '32px 32px',
+          }}
+        ></div>
+      </div>
+
+      {/* 1. Header (Compact Single-Line) */}
+      <header className="relative z-10 shrink-0 border-b border-brand-emerald/40 bg-brand-emerald-deep/90 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Logo variant="light" size="sm" />
+          <span className="hidden md:inline-block h-4 w-[1px] bg-brand-emerald/60"></span>
+          <div className="hidden md:flex items-center gap-1.5 text-xs text-brand-sand-medium">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-gold-bright"></span>
+            </span>
+            <span>Srinagar Atelier Harvest Dispatch · Final Preparations</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-brand-emerald/60 border border-brand-gold/30 text-brand-gold-bright">
+            <Award className="w-3 h-3 text-brand-gold" />
+            100% Single-Origin Kashmir
+          </span>
+
+          {/* Discreet Internal Preview for Team Testing */}
+          {/* <button
+            onClick={() => navigate('/prelaunch')}
+            className="text-[11px] text-brand-sand-medium/70 hover:text-brand-gold transition-colors flex items-center gap-1 px-2 py-1 rounded border border-transparent hover:border-brand-emerald/50 cursor-pointer"
+            title="Team Testing Access: View Prelaunch Storefront"
+          >
+            <Lock className="w-3 h-3 opacity-70" />
+            <span className="hidden xs:inline">Internal Preview</span>
+          </button> */}
+        </div>
+      </header>
+
+      {/* 2. Main Content (Flex-1, Fits perfectly without scrolling) */}
+      <main className="relative z-10 flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-2 sm:py-3 overflow-hidden">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+          
+          {/* Left Column: Brand Story, Headline & Countdown (lg:col-span-7) */}
+          <div className="lg:col-span-7 flex flex-col justify-center space-y-3 sm:space-y-4">
+            {/* Eyebrow Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-emerald/80 border border-brand-gold/40 text-brand-gold-bright text-[11px] font-semibold tracking-wider uppercase shadow-sm self-start">
+              <Sparkles className="w-3 h-3 text-brand-gold-bright shrink-0" />
+              <span>Autumn 2026 Harvest · Grand Launch Imminent</span>
+            </div>
+
+            {/* Headline */}
+            <div className="space-y-1.5">
+              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.12]">
+                The Authentic Taste of Kashmir Is Getting Ready to Launch
+              </h1>
+              <p className="text-xs sm:text-sm text-brand-sand-light/85 leading-relaxed max-w-xl font-normal">
+                Centennial orchard Kagzi walnuts, cold-shelled Mamra almonds, and royal festive hampers
+                direct from our Srinagar packaging atelier. 100% pure, unbleached, and chemical-free.
+              </p>
+            </div>
+
+            {/* Live Countdown Clock */}
+            <div className="bg-brand-emerald-deep/70 backdrop-blur-md border border-brand-emerald/60 rounded-2xl p-2.5 sm:p-3 shadow-md max-w-lg">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-brand-gold-bright font-bold flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-brand-gold" />
+                  <span>Launch Countdown</span>
+                </span>
+                <span className="text-[10px] text-brand-sand-medium/80">Doors opening soon</span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: 'Days', value: timeLeft.days },
+                  { label: 'Hours', value: timeLeft.hours },
+                  { label: 'Minutes', value: timeLeft.minutes },
+                  { label: 'Seconds', value: timeLeft.seconds },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-brand-emerald-darker/90 border border-brand-gold/30 rounded-xl py-1.5 sm:py-2 text-center"
+                  >
+                    <div className="font-serif text-xl sm:text-2xl lg:text-3xl font-bold text-brand-gold-bright leading-none">
+                      {String(item.value).padStart(2, '0')}
+                    </div>
+                    <div className="text-[9px] sm:text-[10px] text-brand-sand-medium uppercase font-medium tracking-wider mt-0.5">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Harvest Highlights Mini Strip */}
+            <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-lg">
+              {HARVEST_PREVIEWS.map((item, i) => (
+                <div
+                  key={i}
+                  className="bg-brand-emerald-deep/50 border border-brand-emerald/50 rounded-xl px-2.5 py-1.5 text-left"
+                >
+                  <div className="text-[11px] font-bold text-white truncate">{item.name}</div>
+                  <div className="text-[9px] text-brand-gold truncate">{item.highlight}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Trust Badges */}
+            <div className="hidden sm:flex items-center gap-3 pt-1 text-[11px] text-brand-sand-medium/90">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+                <span>Zero Bleach</span>
+              </span>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Package className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+                <span>Air Courier Dispatch</span>
+              </span>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Award className="w-3.5 h-3.5 text-brand-gold shrink-0" />
+                <span>FSSAI Certified</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Right Column: WhatsApp VIP Access & Coupon Capture (lg:col-span-5) */}
+          <div className="lg:col-span-5 flex flex-col justify-center">
+            <div className="bg-brand-emerald/90 backdrop-blur-xl border-2 border-brand-gold/45 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl relative overflow-hidden">
+              {/* Decorative Corner Glow */}
+              <div className="absolute top-0 right-0 w-28 h-28 bg-brand-gold/15 rounded-full blur-xl pointer-events-none"></div>
+
+              {!isSubmitted ? (
+                <div>
+                  {/* Card Header */}
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg sm:text-xl font-bold text-white leading-tight">
+                        Receive Launch Coupon on WhatsApp
+                      </h3>
+                      <p className="text-[11px] sm:text-xs text-brand-sand-light/80">
+                        Get <strong className="text-brand-gold-bright font-bold">20% OFF</strong> & priority harvest allocation on launch morning.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3">
+                    {/* Interest Selector Pills */}
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-brand-sand-medium font-semibold mb-1">
+                        Select Harvest Interest:
+                      </label>
+                      <div className="flex flex-wrap gap-1">
+                        {[
+                          'All Harvest',
+                          'Walnuts',
+                          'Mamra Badam',
+                          'Royal Hamper',
+                        ].map((interest) => (
+                          <button
+                            type="button"
+                            key={interest}
+                            onClick={() => setSelectedInterest(interest)}
+                            className={`text-[10px] sm:text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                              selectedInterest === interest
+                                ? 'bg-brand-gold text-brand-emerald-deep font-bold border-brand-gold shadow-xs'
+                                : 'bg-brand-emerald-deep/70 text-brand-sand-light border-brand-emerald/60 hover:border-brand-gold/40'
+                            }`}
+                          >
+                            {interest}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Visitor Name (Optional) */}
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-brand-sand-medium font-semibold mb-1">
+                        Your Full Name <span className="text-brand-sand-medium/60">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={visitorName}
+                        onChange={(e) => setVisitorName(e.target.value)}
+                        placeholder="e.g. Tariq Ahmad"
+                        className="w-full px-3 py-2 rounded-xl bg-brand-emerald-deep/90 border border-brand-emerald/70 focus:border-brand-gold text-xs text-white placeholder:text-brand-sand-medium/50 outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* WhatsApp Mobile Number */}
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-brand-sand-medium font-semibold mb-1">
+                        WhatsApp Mobile Number <span className="text-brand-gold-bright">*</span>
+                      </label>
+                      <div className="flex gap-1.5">
+                        {/* Country Code Picker */}
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="px-2.5 py-2 rounded-xl bg-brand-emerald-deep/90 border border-brand-emerald/70 focus:border-brand-gold text-xs text-white outline-none shrink-0 cursor-pointer"
+                        >
+                          {COUNTRY_CODES.map((c) => (
+                            <option key={c.code} value={c.code} className="bg-brand-emerald-deep text-white">
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Phone Input */}
+                        <div className="relative flex-1">
+                          <input
+                            type="tel"
+                            required
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="e.g. 98765 43210"
+                            className="w-full px-3 py-2 rounded-xl bg-brand-emerald-deep/90 border border-brand-emerald/70 focus:border-brand-gold text-xs text-white placeholder:text-brand-sand-medium/50 outline-none transition-colors"
+                          />
+                        </div>
+                      </div>
+                      {errorMessage && (
+                        <p className="text-[11px] text-red-300 mt-1 flex items-center gap-1">
+                          <span>⚠️</span> {errorMessage}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Submit CTA */}
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-brand-gold hover:bg-brand-gold-bright active:scale-[0.99] text-brand-emerald-deep font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-brand-gold/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                    >
+                      {isSubmitting ? (
+                        <span>Registering for VIP Access...</span>
+                      ) : (
+                        <>
+                          <Phone className="w-3.5 h-3.5 fill-brand-emerald-deep" />
+                          <span>Get 20% OFF Coupon on WhatsApp</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-[10px] text-center text-brand-sand-medium/70">
+                      🔒 Zero spam. We message you only on launch morning with your coupon & link.
+                    </p>
+                  </form>
+                </div>
+              ) : (
+                /* Success State */
+                <div className="text-center py-2 space-y-3">
+                  <div className="w-11 h-11 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+
+                  <div>
+                    <span className="text-[9px] bg-brand-gold/20 text-brand-gold-bright border border-brand-gold/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
+                      VIP Launch Pass Active
+                    </span>
+                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-white mt-1.5">
+                      You're on the Launch Roster!
+                    </h3>
+                    <p className="text-xs text-brand-sand-light/90 max-w-xs mx-auto mt-1 leading-relaxed">
+                      We'll alert your WhatsApp <strong className="text-brand-gold-bright">{countryCode} {phoneNumber}</strong> the moment launch orders begin.
+                    </p>
+                  </div>
+
+                  {/* Coupon Code Reveal Card */}
+                  <div className="bg-brand-emerald-deep/90 border border-brand-gold/50 rounded-xl p-3 max-w-xs mx-auto shadow-inner">
+                    <div className="text-[9px] uppercase tracking-widest text-brand-sand-medium font-bold mb-1">
+                      Your Reserved Launch Code (20% OFF)
+                    </div>
+                    <div className="flex items-center justify-between gap-2 bg-brand-emerald/70 px-3 py-1.5 rounded-lg border border-brand-gold/30">
+                      <span className="font-mono text-base font-bold text-brand-gold-bright tracking-wider">
+                        {couponCode}
+                      </span>
+                      <button
+                        onClick={handleCopyCoupon}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded bg-brand-gold hover:bg-brand-gold-bright text-brand-emerald-deep font-bold text-[11px] transition-colors cursor-pointer"
+                      >
+                        {copiedCode ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            <span>Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Share with Friends on WhatsApp */}
+                  <div>
+                    <a
+                      href={`https://wa.me/?text=${shareText}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-sm"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share Coupon on WhatsApp</span>
+                      <ExternalLink className="w-3 h-3 opacity-80" />
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+      {/* 3. Footer (Single-Line Compact Bar) */}
+      <footer className="relative z-10 shrink-0 border-t border-brand-emerald/40 bg-brand-emerald-deep/95 backdrop-blur-md px-4 sm:px-6 py-2 text-[11px] text-brand-sand-medium flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span>© 2026 KashBites Agro Pvt Ltd.</span>
+          <span className="hidden sm:inline">·</span>
+          <span className="hidden sm:inline">Packaging Atelier: Sanat Nagar, Srinagar, J&K – 190005</span>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span>Inquiries: <a href="mailto:hello@kashbites.in" className="text-brand-gold hover:underline">hello@kashbites.in</a></span>
+          <span>·</span>
+          <span className="flex items-center gap-1">
+            <span>Crafted with</span>
+            <Heart className="w-3 h-3 text-brand-gold fill-brand-gold" />
+            <span>in Kashmir</span>
+          </span>
+          <span>·</span>
+          <button
+            onClick={() => navigate('/prelaunch')}
+            className="text-brand-gold/80 hover:text-brand-gold font-medium underline cursor-pointer"
+            title="Team Testing Access: View Prelaunch Storefront"
+          >
+            Staff Portal →
+          </button>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default LaunchingScreen;

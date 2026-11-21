@@ -18,7 +18,7 @@ export const HomePage = ({ onSelectProduct, onNavigateToCatalog, searchQuery }) 
 
   const effectiveSearchQuery = searchQuery ?? outletContext.searchQuery ?? '';
   const handleSelectProduct =
-    onSelectProduct || outletContext.onSelectProduct || ((id) => navigate(`/product/${id}`));
+    onSelectProduct || outletContext.onSelectProduct || ((id) => navigate(`/prelaunch/product/${id}`));
 
   const urlCategory = searchParams.get('category');
   const [selectedCategory, setSelectedCategory] = useState(urlCategory || 'all');
