@@ -5,6 +5,7 @@ import authRoutes from './auth.routes.js';
 import reviewRoutes from './review.routes.js';
 import mediaRoutes from './media.routes.js';
 import adminRoutes from './admin.routes.js';
+import prelaunchRoutes from './prelaunch.routes.js';
 
 const router = express.Router();
 
@@ -14,5 +15,6 @@ router.use('/auth', authRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/media', mediaRoutes);
 router.use('/admin', adminRoutes);
+router.use('/prelaunch', prelaunchRoutes);
 
 export default router;

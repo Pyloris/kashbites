@@ -6,6 +6,7 @@ import authRoutes from './v1/auth.routes.js';
 import reviewRoutes from './v1/review.routes.js';
 import mediaRoutes from './v1/media.routes.js';
 import adminRoutes from './v1/admin.routes.js';
+import prelaunchRoutes from './v1/prelaunch.routes.js';
 import { getDBStatus } from '../database/connect.js';
 import { getMinIOStatus } from '../config/minio.js';
 import { OrderController } from '../controllers/order.controller.js';
@@ -23,6 +24,7 @@ router.use('/auth', authRoutes);
 router.use('/reviews', reviewRoutes);
 router.use('/media', mediaRoutes);
 router.use('/admin', adminRoutes);
+router.use('/prelaunch', prelaunchRoutes);
 
 // Backward compatible coupon validate endpoint (/api/coupons/validate)
 router.post('/coupons/validate', OrderController.validateCoupon);
