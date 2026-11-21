@@ -1,21 +1,20 @@
 import * as Minio from 'minio';
-const MINIO_ENDPOINT = process.env.MINIO_ENDPOINT || 'localhost';
-const MINIO_PORT = parseInt(process.env.MINIO_PORT || '9000', 10);
-const MINIO_USE_SSL = process.env.MINIO_USE_SSL === 'true';
-const MINIO_ACCESS_KEY = process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || 'kashbites_admin';
-const MINIO_SECRET_KEY = process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || 'kashbites_minio_secret_2026';
-export const MINIO_BUCKET = process.env.MINIO_BUCKET_NAME || 'kashbites-media';
-const MINIO_PUBLIC_URL = process.env.MINIO_PUBLIC_URL || `http://${MINIO_ENDPOINT}:${MINIO_PORT}`;
+import { appConfig } from './app-config.js';
+
+export const MINIO_BUCKET = appConfig.MINIO_BUCKET_NAME;
+
 export const minioClient = new Minio.Client({
-    endPoint: MINIO_ENDPOINT,
-    port: MINIO_PORT,
-    useSSL: MINIO_USE_SSL,
-    accessKey: MINIO_ACCESS_KEY,
-    secretKey: MINIO_SECRET_KEY,
+    endPoint: appConfig.MINIO_ENDPOINT,
+    port: appConfig.MINIO_PORT,
+    useSSL: appConfig.MINIO_USE_SSL,
+    accessKey: appConfig.MINIO_ACCESS_KEY,
+    secretKey: appConfig.MINIO_SECRET_KEY,
 });
+
 let isMinioReady = false;
 // In-memory fallback media store when running without Docker MinIO daemon
 const inMemoryMediaStore = new Map();
+
 export const initMinIO = async () => {
     try {
         const exists = await Promise.race([
@@ -38,21 +37,22 @@ export const initMinIO = async () => {
             await minioClient.setBucketPolicy(MINIO_BUCKET, JSON.stringify(publicPolicy));
         }
         isMinioReady = true;
-        console.log(`[MinIO] Connected and bucket '${MINIO_BUCKET}' is ready at ${MINIO_PUBLIC_URL}`);
+        console.log(`[MinIO] Connected and bucket '${MINIO_BUCKET}' is ready at ${appConfig.MINIO_PUBLIC_URL}`);
         return true;
-    }
-    catch (error) {
+    } catch (error) {
         isMinioReady = false;
-        console.warn(`[MinIO] MinIO daemon not reachable at ${MINIO_ENDPOINT}:${MINIO_PORT}. Using local Express media proxy fallback.`);
+        console.warn(`[MinIO] MinIO daemon not reachable at ${appConfig.MINIO_ENDPOINT}:${appConfig.MINIO_PORT}. Using local Express media proxy fallback.`);
         return false;
     }
 };
+
 export const getMinIOStatus = () => ({
     connected: isMinioReady,
     bucket: MINIO_BUCKET,
-    endpoint: `${MINIO_ENDPOINT}:${MINIO_PORT}`,
+    endpoint: `${appConfig.MINIO_ENDPOINT}:${appConfig.MINIO_PORT}`,
     provider: isMinioReady ? 'MinIO S3 Object Storage' : 'Express Static Media Proxy (MinIO Fallback)',
 });
+
 /**
  * Uploads a file buffer to MinIO under a folder prefix (e.g. 'products', 'reviews')
  */
@@ -64,7 +64,7 @@ export const uploadToMinIO = async (folder, originalName, buffer, mimeType) => {
             'Content-Type': mimeType,
         });
         return {
-            url: `${MINIO_PUBLIC_URL}/${MINIO_BUCKET}/${objectKey}`,
+            url: `${appConfig.MINIO_PUBLIC_URL}/${MINIO_BUCKET}/${objectKey}`,
             objectKey,
             storage: 'minio',
         };
@@ -77,6 +77,16 @@ export const uploadToMinIO = async (folder, originalName, buffer, mimeType) => {
         storage: 'local-fallback',
     };
 };
+
 export const getFallbackMediaObject = (objectKey) => {
     return inMemoryMediaStore.get(objectKey) || null;
+};
+
+export default {
+    minioClient,
+    MINIO_BUCKET,
+    initMinIO,
+    getMinIOStatus,
+    uploadToMinIO,
+    getFallbackMediaObject,
 };

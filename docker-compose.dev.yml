@@ -55,6 +55,16 @@ services:
     networks:
       - kashbites-dev-network
 
+  # Redis Cache & Message Queue for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: kashbites-dev-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - kashbites-dev-network
+
 volumes:
   mongodb_data:
     driver: local

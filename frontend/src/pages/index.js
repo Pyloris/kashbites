@@ -1,0 +1,11 @@
+export { HomePage } from './home/home-page.jsx';
+export { CatalogPage } from './catalog/catalog-page.jsx';
+export { ProductDetailPage } from './product-detail/product-detail-page.jsx';
+export { UserProfilePage } from './user-profile/user-profile-page.jsx';
+export { UserSettingsPage } from './user-settings/user-settings-page.jsx';
+export { AboutPage } from './about/about-page.jsx';
+export { ContactPage } from './contact/contact-page.jsx';
+export { PrivacyPolicyPage } from './privacy-policy/privacy-policy-page.jsx';
+export { TermsPage } from './terms/terms-page.jsx';
+export { NotFoundPage } from './not-found/not-found-page.jsx';
+export { AdminPage } from './admin/admin-page.jsx';

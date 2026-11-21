@@ -1,13 +1,13 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { AdminPanelPage } from '../pages/AdminPanelPage.jsx';
+import { AdminPage } from '../pages/admin/admin-page.jsx';
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminPanelPage
+      <AdminPage
         onBackToStorefront={() => {
           navigate('/');
         }}
@@ -16,3 +16,5 @@ export const AdminLayout = () => {
     </div>
   );
 };
+
+export default AdminLayout;

@@ -1,4 +1,69 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
+
+@theme {
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Signature Kashmiri Emerald Greens */
+  --color-brand-emerald: #143E26;
+  --color-brand-emerald-dark: #0E331E;
+  --color-brand-emerald-darker: #0A2416;
+  --color-brand-emerald-deep: #0A2416;
+  --color-brand-emerald-forest: #103822;
+  --color-brand-emerald-medium: #1F5435;
+  --color-brand-emerald-light: #E1EBE3;
+  --color-brand-emerald-tint: #EAF2EC;
+
+  /* Kashmiri Saffron & Heritage Gold */
+  --color-brand-gold: #C59432;
+  --color-brand-gold-bright: #DFB248;
+  --color-brand-gold-light: #DFB248;
+  --color-brand-gold-deep: #9E6D0E;
+  --color-brand-gold-dark: #6D4906;
+  --color-brand-gold-subtle: #FAF0D6;
+  --color-brand-gold-tint: #FAF4E6;
+
+  /* Himalayan Sand, Stone & Silk Cream */
+  --color-brand-sand: #E8DEC8;
+  --color-brand-sand-border: #E8DEC8;
+  --color-brand-sand-medium: #D5CABB;
+  --color-brand-sand-light: #F2ECE1;
+  --color-brand-sand-subtle: #F5EFE6;
+  --color-brand-sand-surface: #F5EFE6;
+  --color-brand-sand-track: #F4EFE6;
+  --color-brand-sand-divider: #EFE8DC;
+  --color-brand-sand-dark: #D5CABB;
+
+  /* Canvas & Card Surfaces */
+  --color-brand-canvas: #FAF7F2;
+  --color-brand-canvas-page: #FAF7F2;
+  --color-brand-canvas-card: #FCFAF5;
+  --color-brand-card: #FCFAF5;
+  --color-brand-canvas-white: #FFFFFF;
+
+  /* High-Contrast Typography */
+  --color-brand-text: #1E2E21;
+  --color-brand-text-primary: #0E331E;
+  --color-brand-text-display: #0E331E;
+  --color-brand-text-main: #1E2E21;
+  --color-brand-text-body: #2F4435;
+  --color-brand-text-muted: #526356;
+  --color-brand-text-subtle: #7A8E7F;
+  --color-brand-text-light: #FAF7F2;
+  --color-brand-muted: #526356;
+  --color-brand-subtle: #7A8E7F;
+
+  /* Semantic Status Colors */
+  --color-brand-status-success: #2D7A46;
+  --color-brand-status-danger: #B91C1C;
+  --color-brand-status-warning: #D97706;
+  --color-brand-status-info: #2563EB;
+
+  /* Shadows */
+  --shadow-card-hover: 0 12px 24px -4px rgba(20, 62, 38, 0.12);
+}
 
 @layer base {
   :root {
@@ -7,12 +72,14 @@
   }
 
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
+    background-color: var(--color-brand-canvas);
+    color: var(--color-brand-text);
   }
 }
 
 .font-serif-brand {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: var(--font-serif);
 }
 
 /* Custom scrollbar for gallery thumbnails */
@@ -21,14 +88,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #F4EFE6;
+  background: var(--color-brand-sand-track);
 }
 ::-webkit-scrollbar-thumb {
-  background: #C4B59F;
+  background: var(--color-brand-sand-medium);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A08C73;
+  background: var(--color-brand-gold-deep);
 }
 
 /* Hide scrollbars utility */

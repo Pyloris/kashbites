@@ -50,6 +50,16 @@ services:
     networks:
       - kashbites-network
 
+  # Redis Cache & Message Queue for BullMQ
+  redis:
+    image: redis:7-alpine
+    container_name: kashbites-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - kashbites-network
+
   # Node.js + Express Backend Service
   backend:
     build:
@@ -61,6 +71,8 @@ services:
       NODE_ENV: production
       PORT: 5000
       MONGODB_URI: mongodb://mongodb:27017/kashbites
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-kashbites_super_secret_jwt_key_2026}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:9099}
       MINIO_ENDPOINT: minio
@@ -73,6 +85,26 @@ services:
     depends_on:
       - mongodb
       - minio
+      - redis
+    networks:
+      - kashbites-network
+
+  # Background Workers Service (BullMQ consumers)
+  workers:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kashbites-workers
+    command: ["node", "src/workers/main.js"]
+    restart: always
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongodb:27017/kashbites
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mongodb
+      - redis
     networks:
       - kashbites-network
 

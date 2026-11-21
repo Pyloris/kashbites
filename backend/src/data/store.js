@@ -2,7 +2,6 @@ import { initialProducts, initialReviews } from './seedData.js';
 // 1. Seeded Admin Account (shoaibwani)
 export const adminsStore = [
     {
-        _id: 'adm-shoaib-01',
         username: 'shoaibwani',
         password: 'kashbites@admin2026',
         name: 'Shoaib Wani',
@@ -33,7 +32,6 @@ export const productsStore = initialProducts.map((p, idx) => ({
 // 4. Coupons Store (Percentage & Flat discounts with min order & expiry rules)
 export const couponsStore = [
     {
-        _id: 'cpn-01',
         code: 'KASHMIR10',
         description: '10% off across all authentic Kashmiri dry fruits',
         discountType: 'PERCENTAGE',
@@ -45,7 +43,6 @@ export const couponsStore = [
         usageCount: 34,
     },
     {
-        _id: 'cpn-02',
         code: 'CHINAR10',
         description: '10% Chinar Club Member loyalty discount',
         discountType: 'PERCENTAGE',
@@ -57,7 +54,6 @@ export const couponsStore = [
         usageCount: 19,
     },
     {
-        _id: 'cpn-03',
         code: 'WELCOME200',
         description: 'Flat ₹200 off on Royal Gift Hampers & orders above ₹1,499',
         discountType: 'FLAT',
@@ -68,7 +64,6 @@ export const couponsStore = [
         usageCount: 12,
     },
     {
-        _id: 'cpn-04',
         code: 'HARVEST25',
         description: '25% festive season discount on bulk family orders above ₹2,499',
         discountType: 'PERCENTAGE',
@@ -106,7 +101,6 @@ export const offersStore = [
 // 6. Customer Users Store
 export const usersStore = [
     {
-        _id: 'usr-owais-01',
         name: 'Mohammad Owais',
         email: 'mohammadowais616@gmail.com',
         phone: '+91 98765 43210',
@@ -148,7 +142,6 @@ export const usersStore = [
         createdAt: '2026-10-14T09:30:00.000Z',
     },
     {
-        _id: 'usr-ananya-02',
         name: 'Dr. Ananya Sharma',
         email: 'ananya.sharma@example.com',
         phone: '+91 98111 22334',
@@ -177,7 +170,6 @@ export const usersStore = [
         createdAt: '2026-10-22T14:15:00.000Z',
     },
     {
-        _id: 'usr-zubair-03',
         name: 'Zubair Ahmad Mir',
         email: 'zubair.mir@example.com',
         phone: '+91 94190 55667',

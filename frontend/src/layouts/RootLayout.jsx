@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Navbar } from '../components/layout/Navbar.jsx';
-import { Footer } from '../components/layout/Footer.jsx';
-import { CartDrawer } from '../components/modals/CartDrawer.jsx';
-import { CheckoutModal } from '../components/modals/CheckoutModal.jsx';
-import { OrderTrackingModal } from '../components/modals/OrderTrackingModal.jsx';
-import { AuthModal } from '../components/modals/AuthModal.jsx';
+import { Navbar } from './components/Navbar.jsx';
+import { Footer } from './components/Footer.jsx';
+import {
+  CartDrawer,
+  CheckoutModal,
+  OrderTrackingModal,
+  AuthModal,
+} from '../components/custom/index.js';
 
 export const RootLayout = () => {
   const location = useLocation();
@@ -16,35 +18,43 @@ export const RootLayout = () => {
   const [isTrackingOpen, setIsTrackingOpen] = useState(false);
   const [trackedOrderNumber, setTrackedOrderNumber] = useState(undefined);
 
-  // Scroll to top automatically when location path changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
   const currentView = location.pathname.startsWith('/profile')
     ? 'profile'
+    : location.pathname.startsWith('/settings')
+    ? 'settings'
+    : location.pathname.startsWith('/catalog')
+    ? 'catalog'
     : location.pathname.startsWith('/product')
-      ? 'product'
-      : 'home';
+    ? 'product'
+    : location.pathname === '/'
+    ? 'home'
+    : 'other';
 
   const handleNavigate = (view, param) => {
     if (view === 'admin') {
       navigate('/admin');
     } else if (view === 'profile') {
       navigate('/profile');
+    } else if (view === 'settings') {
+      navigate('/settings');
+    } else if (view === 'about') {
+      navigate('/about');
+    } else if (view === 'contact') {
+      navigate('/contact');
+    } else if (view === 'privacy') {
+      navigate('/privacy-policy');
+    } else if (view === 'terms') {
+      navigate('/terms');
     } else if (view === 'home') {
       navigate('/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (view === 'catalog') {
-      if (location.pathname !== '/') {
-        navigate(param ? `/?category=${param}` : '/');
-      } else {
-        if (param) {
-          navigate(`/?category=${param}`);
-        }
-        const el = document.getElementById('products-section');
-        el?.scrollIntoView({ behavior: 'smooth' });
-      }
+      navigate(param ? `/catalog?category=${param}` : '/catalog');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -59,8 +69,7 @@ export const RootLayout = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#1B291E]">
-      {/* Top Navigation */}
+    <div className="min-h-screen flex flex-col bg-brand-canvas text-brand-text-body">
       <Navbar
         onNavigate={handleNavigate}
         currentView={currentView}
@@ -69,7 +78,6 @@ export const RootLayout = () => {
         searchQuery={searchQuery}
       />
 
-      {/* Main Routed Content */}
       <main className="flex-1">
         <Outlet
           context={{
@@ -82,31 +90,28 @@ export const RootLayout = () => {
         />
       </main>
 
-      {/* Heritage Kashmiri Footer */}
       <Footer
         onNavigate={handleNavigate}
         onOpenTracking={() => handleOpenTracking()}
       />
 
-      {/* Slide-over Cart Drawer */}
       <CartDrawer onProceedToCheckout={() => setIsCheckoutOpen(true)} />
 
-      {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onOrderSuccess={handleOrderSuccess}
       />
 
-      {/* Order Tracking & Batch Verification Modal */}
       <OrderTrackingModal
         isOpen={isTrackingOpen}
         onClose={() => setIsTrackingOpen(false)}
         initialOrderNumber={trackedOrderNumber}
       />
 
-      {/* Auth Modal */}
       <AuthModal />
     </div>
   );
 };
+
+export default RootLayout;

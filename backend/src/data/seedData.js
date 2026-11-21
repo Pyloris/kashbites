@@ -1,6 +1,5 @@
 export const initialProducts = [
     {
-        _id: "kb-prod-01",
         name: "Kashmiri Walnuts (In-Shell & Giri)",
         slug: "kashmiri-walnuts",
         category: "walnuts",
@@ -56,7 +55,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-02",
         name: "Kashmiri Mamra Almonds (Badam Giri)",
         slug: "kashmiri-almonds",
         category: "almonds",
@@ -112,7 +110,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-03",
         name: "Sun-Dried Kashmiri Apricots (Khubani)",
         slug: "dried-apricots",
         category: "apricots",
@@ -168,7 +165,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-04",
         name: "Extra Light Halves Walnut Kernels",
         slug: "walnut-kernels",
         category: "kernels",
@@ -224,7 +220,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-05",
         name: "KashBites Signature Collection — Emerald Gift Box",
         slug: "signature-collection-emerald-box",
         category: "combos",
@@ -279,7 +274,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-06",
         name: "Mixed Dry Fruits — Royal Mountain Medley",
         slug: "mixed-dry-fruits",
         category: "mixes",
@@ -335,7 +329,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-07",
         name: "Valley Trio Harvest Combo (Walnuts + Almonds + Apricots)",
         slug: "valley-trio-harvest-combo",
         category: "combos",
@@ -390,7 +383,6 @@ export const initialProducts = [
         inStock: true,
     },
     {
-        _id: "kb-prod-08",
         name: "Golden Kashmiri Green Raisins (Kishmish)",
         slug: "kashmiri-raisins",
         category: "apricots",
@@ -447,8 +439,7 @@ export const initialProducts = [
 ];
 export const initialReviews = [
     {
-        _id: "rev-01",
-        productId: "kb-prod-01",
+        productSlug: "kashmiri-walnuts",
         author: "Zubair Ahmad Mir",
         location: "Srinagar, Kashmir",
         rating: 5,
@@ -458,8 +449,7 @@ export const initialReviews = [
         date: "2 days ago",
     },
     {
-        _id: "rev-02",
-        productId: "kb-prod-01",
+        productSlug: "kashmiri-walnuts",
         author: "Dr. Ananya Sharma",
         location: "New Delhi",
         rating: 5,
@@ -469,8 +459,7 @@ export const initialReviews = [
         date: "4 days ago",
     },
     {
-        _id: "rev-03",
-        productId: "kb-prod-02",
+        productSlug: "kashmiri-almonds",
         author: "Rohit Malhotra",
         location: "Chandigarh",
         rating: 5,
@@ -480,8 +469,7 @@ export const initialReviews = [
         date: "1 week ago",
     },
     {
-        _id: "rev-04",
-        productId: "kb-prod-05",
+        productSlug: "signature-collection-emerald-box",
         author: "Pooja Singhania",
         location: "Mumbai",
         rating: 5,
@@ -491,8 +479,7 @@ export const initialReviews = [
         date: "3 days ago",
     },
     {
-        _id: "rev-05",
-        productId: "kb-prod-03",
+        productSlug: "dried-apricots",
         author: "Fatima Khan",
         location: "Bengaluru",
         rating: 5,

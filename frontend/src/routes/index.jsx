@@ -2,10 +2,18 @@ import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout.jsx';
 import { AdminLayout } from '../layouts/AdminLayout.jsx';
-import { HomePage } from '../pages/HomePage.jsx';
-import { ProductDetailPage } from '../components/product/ProductDetailPage.jsx';
-import { UserProfilePage } from '../pages/UserProfilePage.jsx';
-import { NotFoundPage } from '../pages/NotFoundPage.jsx';
+import {
+  HomePage,
+  CatalogPage,
+  ProductDetailPage,
+  UserProfilePage,
+  UserSettingsPage,
+  AboutPage,
+  ContactPage,
+  PrivacyPolicyPage,
+  TermsPage,
+  NotFoundPage,
+} from '../pages/index.js';
 
 export const routes = [
   {
@@ -15,6 +23,10 @@ export const routes = [
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'catalog',
+        element: <CatalogPage />,
       },
       {
         path: 'product/:id',
@@ -29,8 +41,32 @@ export const routes = [
         element: <UserProfilePage />,
       },
       {
-        path: 'catalog',
-        element: <HomePage />,
+        path: 'settings',
+        element: <UserSettingsPage />,
+      },
+      {
+        path: 'about',
+        element: <AboutPage />,
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
+      },
+      {
+        path: 'privacy-policy',
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: 'privacy',
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: 'terms',
+        element: <TermsPage />,
+      },
+      {
+        path: 'terms-of-service',
+        element: <TermsPage />,
       },
       {
         path: '*',
