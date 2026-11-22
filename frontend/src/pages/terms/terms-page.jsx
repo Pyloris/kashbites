@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '../../components/ui/index.js';
 import { TermsSections } from './components/index.js';
+import { appConfig } from '../../config/app-config.js';
 
 export const TermsPage = () => {
   return (
@@ -14,7 +15,7 @@ export const TermsPage = () => {
             Terms of Service & Harvest Guarantee
           </h1>
           <p className="text-xs text-brand-text-muted">
-            Effective as of 2026 Autumn Harvest · KashBites Agro Pvt Ltd
+            Effective as of 2026 Autumn Harvest · {appConfig.brand.companyName}
           </p>
         </div>
 

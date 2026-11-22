@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../../components/ui/index.js';
 import { MapPin, Clock, ShieldCheck } from 'lucide-react';
+import { appConfig } from '../../../config/app-config.js';
 
 export const FacilityInfo = () => {
   return (
@@ -13,7 +14,7 @@ export const FacilityInfo = () => {
           </h4>
         </div>
         <p className="text-xs text-brand-text-muted leading-relaxed">
-          KashBites Agro Pvt Ltd<br />
+          {appConfig.brand.companyName}<br />
           Plot No. 42-B, Industrial Growth Centre, Sanat Nagar,<br />
           Srinagar, Jammu & Kashmir – 190005, India
         </p>
@@ -24,7 +25,7 @@ export const FacilityInfo = () => {
           </div>
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-brand-emerald" />
-            <span>FSSAI License: 11026999000142</span>
+            <span>{appConfig.brand.fssai.fullDisplay}</span>
           </div>
         </div>
       </Card>

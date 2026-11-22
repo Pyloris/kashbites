@@ -15,6 +15,7 @@ const ProductSchema = new Schema({
         {
             weight: { type: String, required: true },
             price: { type: Number, required: true },
+            originalPrice: { type: Number },
             inStock: { type: Boolean, default: true },
             stockQuantity: { type: Number, default: 50 },
         },

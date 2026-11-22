@@ -4,10 +4,21 @@ import { MediaService } from '../services/media.service.js';
 
 export class MediaController {
     static uploadMediaFile = catchError(async (req, res) => {
-        const file = req.file;
+        const file = req.file || (Array.isArray(req.files) ? req.files[0] : null);
         const folder = req.body.folder || 'reviews';
         const uploaded = await MediaService.upload({ file, folder });
         return ApiResponse.created(res, uploaded, 'Media uploaded successfully');
+    });
+
+    static uploadMultipleMediaFiles = catchError(async (req, res) => {
+        const files = Array.isArray(req.files)
+            ? req.files
+            : req.file
+            ? [req.file]
+            : [];
+        const folder = req.body.folder || 'products';
+        const uploaded = await MediaService.uploadMultiple({ files, folder });
+        return ApiResponse.created(res, uploaded, 'Media files uploaded successfully');
     });
 
     static serveMediaFallback = catchError(async (req, res) => {
@@ -26,6 +37,7 @@ export class MediaController {
 
 // Named exports for backward compatibility
 export const uploadMediaFile = MediaController.uploadMediaFile;
+export const uploadMultipleMediaFiles = MediaController.uploadMultipleMediaFiles;
 export const serveMediaFallback = MediaController.serveMediaFallback;
 export const getMediaStorageStatus = MediaController.getMediaStorageStatus;
 

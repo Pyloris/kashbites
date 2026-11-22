@@ -12,6 +12,7 @@ const upload = multer({
 
 router.get('/status', MediaController.getMediaStorageStatus);
 router.post('/upload', upload.single('file'), MediaController.uploadMediaFile);
+router.post('/upload-multiple', upload.array('files', 10), MediaController.uploadMultipleMediaFiles);
 router.get('/file/:folder/:filename', MediaController.serveMediaFallback);
 
 export default router;

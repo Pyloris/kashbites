@@ -325,6 +325,21 @@ export const {
   useDeleteAdminLeadMutation,
 } = adminApi;
 
+// Safe JSON parser helper to prevent "Unexpected token '<' ..." HTML errors
+const parseJsonResponse = async (res) => {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    const stripped = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return {
+      success: false,
+      status: 0,
+      message: stripped.slice(0, 150) || `Server error (${res.status}: ${res.statusText || 'Non-JSON response'})`,
+    };
+  }
+};
+
 // Internal fetch helper for direct async method invocations
 const adminFetch = async (endpoint, options = {}) => {
   const token = getAdminToken();
@@ -336,7 +351,7 @@ const adminFetch = async (endpoint, options = {}) => {
   const url = `${appConfig.api.baseUrl}${endpoint}`;
   try {
     const res = await fetch(url, { ...options, headers });
-    return await res.json();
+    return await parseJsonResponse(res);
   } catch (err) {
     console.error(`adminFetch error on ${endpoint}:`, err);
     return { success: false, message: err?.message || 'Network error' };
@@ -351,18 +366,18 @@ adminApi.getProducts = () => adminFetch('/admin/products');
 adminApi.createProduct = (data) =>
   adminFetch('/admin/products', { method: 'POST', body: JSON.stringify(data) });
 adminApi.updateProduct = (id, data) =>
-  adminFetch(`/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+  adminFetch(`/admin/products/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(data) });
 adminApi.deleteProduct = (id) =>
-  adminFetch(`/admin/products/${id}`, { method: 'DELETE' });
-adminApi.toggleProductStock = (id) =>
-  adminFetch(`/admin/products/${id}/stock`, { method: 'PATCH' });
+  adminFetch(`/admin/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
+adminApi.toggleProductStock = (id, data) =>
+  adminFetch(`/admin/products/${encodeURIComponent(id)}/stock`, { method: 'PATCH', body: JSON.stringify(data || {}) });
 adminApi.bulkAdjustPrices = (percentage, category) =>
   adminFetch('/admin/products/bulk-price', { method: 'PUT', body: JSON.stringify({ percentage, category }) });
 adminApi.getCategories = () => adminFetch('/admin/categories');
 adminApi.createCategory = (data) =>
   adminFetch('/admin/categories', { method: 'POST', body: JSON.stringify(data) });
 adminApi.deleteCategory = (id) =>
-  adminFetch(`/admin/categories/${id}`, { method: 'DELETE' });
+  adminFetch(`/admin/categories/${encodeURIComponent(id)}`, { method: 'DELETE' });
 adminApi.getCoupons = () => adminFetch('/admin/coupons');
 adminApi.createCoupon = (data) =>
   adminFetch('/admin/coupons', { method: 'POST', body: JSON.stringify(data) });
@@ -399,7 +414,26 @@ adminApi.uploadMedia = async (file, folder = 'products') => {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
-    return await res.json();
+    return await parseJsonResponse(res);
+  } catch (err) {
+    return { success: false, message: err?.message || 'Media upload error' };
+  }
+};
+adminApi.uploadMultipleMedia = async (files, folder = 'products') => {
+  const token = getAdminToken();
+  const formData = new FormData();
+  const fileArray = Array.from(files || []);
+  fileArray.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append('folder', folder);
+  try {
+    const res = await fetch(`${appConfig.api.baseUrl}/media/upload-multiple`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    return await parseJsonResponse(res);
   } catch (err) {
     return { success: false, message: err?.message || 'Media upload error' };
   }

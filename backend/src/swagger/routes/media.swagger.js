@@ -36,6 +36,27 @@
  *       400:
  *         description: No file provided
  *
+ * /media/upload-multiple:
+ *   post:
+ *     summary: Upload multiple image files to MinIO bucket
+ *     tags: [Media]
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - in: formData
+ *         name: files
+ *         type: file
+ *         description: Multiple images to upload
+ *       - in: formData
+ *         name: folder
+ *         type: string
+ *         description: Target bucket folder (e.g. products, reviews)
+ *     responses:
+ *       201:
+ *         description: Files uploaded successfully
+ *       400:
+ *         description: No files provided
+ *
  * /media/file/{folder}/{filename}:
  *   get:
  *     summary: Fallback streaming endpoint for media files

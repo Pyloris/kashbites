@@ -19,16 +19,21 @@ export const categoriesStore = [
     { id: 'combos', name: 'Royal Gift Hampers & Combos', description: 'Signature Emerald Gift Boxes & value bundles' },
     { id: 'mixes', name: 'Healthy Mixes', description: 'Daily energy superfood nut and fruit medleys' },
 ];
-// 3. Products Store (Enriched with stockQuantity and promotionalOfferTag)
-export const productsStore = initialProducts.map((p, idx) => ({
-    ...p,
-    stockQuantity: idx === 4 ? 42 : 120,
-    promotionalOfferTag: idx === 0 ? 'Autumn 2026 Harvest Offer' : idx === 4 ? 'Royal Festive Launch' : '',
-    netWeights: p.netWeights.map((nw) => ({
-        ...nw,
-        stockQuantity: nw.stockQuantity ?? 45,
-    })),
-}));
+// 3. Products Store (Enriched with stockQuantity, promotionalOfferTag, and stable IDs)
+export const productsStore = initialProducts.map((p, idx) => {
+    const id = p._id || p.id || `kb-prod-0${idx + 1}`;
+    return {
+        _id: id,
+        id,
+        ...p,
+        stockQuantity: idx === 4 ? 42 : 120,
+        promotionalOfferTag: idx === 0 ? 'Autumn 2026 Harvest Offer' : idx === 4 ? 'Royal Festive Launch' : '',
+        netWeights: p.netWeights.map((nw) => ({
+            ...nw,
+            stockQuantity: nw.stockQuantity ?? 45,
+        })),
+    };
+});
 // 4. Coupons Store (Percentage & Flat discounts with min order & expiry rules)
 export const couponsStore = [
     {

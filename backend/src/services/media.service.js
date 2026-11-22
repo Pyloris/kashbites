@@ -11,6 +11,19 @@ export class MediaService {
         return uploaded;
     }
 
+    static async uploadMultiple({ files, folder = 'products' }) {
+        if (!Array.isArray(files) || files.length === 0) {
+            throw ApiError.badRequest('No image files provided for upload');
+        }
+
+        const uploadPromises = files.map((file) =>
+            uploadToMinIO(folder, file.originalname, file.buffer, file.mimetype)
+        );
+
+        const uploadedList = await Promise.all(uploadPromises);
+        return uploadedList;
+    }
+
     static getFile({ folder, filename }) {
         const objectKey = `${folder}/${filename}`;
         const item = getFallbackMediaObject(objectKey);

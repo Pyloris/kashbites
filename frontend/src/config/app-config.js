@@ -18,13 +18,26 @@ export const appConfig = {
   // Brand & Origin Details
   brand: {
     name: import.meta.env.VITE_BRAND_NAME || 'KashBites',
+    companyName: import.meta.env.VITE_COMPANY_NAME || 'KashBites Agro Pvt Ltd',
+    legalName: import.meta.env.VITE_BRAND_LEGAL_NAME || 'KashBites Agro Pvt Ltd',
     tagline: import.meta.env.VITE_BRAND_TAGLINE || 'A Taste of Kashmir | Premium Dry Fruits',
-    origin: 'Srinagar, Kashmir Valley',
-    atelierAddress: 'Industrial Estate, Sanat Nagar, Srinagar, Jammu & Kashmir – 190005',
+    origin: import.meta.env.VITE_BRAND_ORIGIN || 'Ganderbal, Kashmir Valley',
+    originCity: import.meta.env.VITE_BRAND_ORIGIN_CITY || 'Srinagar',
+    atelierName: import.meta.env.VITE_ATELIER_NAME || 'Ganderbal Atelier',
+    address: import.meta.env.VITE_COMPANY_ADDRESS || 'Ganderbal, Jammu & Kashmir – 191131',
+    atelierAddress: import.meta.env.VITE_ATELIER_ADDRESS || 'Ganderbal, Jammu & Kashmir – 191131',
+    packagingAtelier: import.meta.env.VITE_PACKAGING_ATELIER || 'Ganderbal, Jammu & Kashmir – 191131',
     contact: {
-      phone: '+91 98765 43210',
-      email: 'hello@kashbites.in',
-      supportEmail: 'support@kashbites.in',
+      phone: import.meta.env.VITE_CONTACT_PHONE || '+91 98765 43210',
+      phonePlaceholder: '98765 43210',
+      phoneDisplay: '+91 98765 43210',
+      email: import.meta.env.VITE_CONTACT_EMAIL || 'hello@kashbites.com',
+      supportEmail: import.meta.env.VITE_SUPPORT_EMAIL || 'support@kashbites.com',
+    },
+    fssai: {
+      licenseNumber: import.meta.env.VITE_FSSAI_LICENSE || '11026999000142',
+      label: 'FSSAI Certified',
+      fullDisplay: 'FSSAI Lic. No: 11026999000142',
     },
   },
 
@@ -77,6 +90,7 @@ export const API_BASE_URL = appConfig.api.baseUrl;
 export const MINIO_PUBLIC_URL = appConfig.media.minioPublicUrl;
 export const STORAGE_KEYS = appConfig.storage;
 export const COMMERCE_CONFIG = appConfig.commerce;
+export const BRAND_CONFIG = appConfig.brand;
 export const IS_LOCAL = isLocal;
 
 export default appConfig;

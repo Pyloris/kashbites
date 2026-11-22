@@ -12,19 +12,27 @@ import {
 } from '../data/store.js';
 import { ApiError } from '../errors/api-error.js';
 import { PrelaunchLead } from '../database/models/prelaunch-leads.model.js';
+import { Product } from '../database/models/products.model.js';
+import { Category } from '../database/models/categories.model.js';
+import mongoose from 'mongoose';
 
-const formatProductForAdmin = (p) => ({
-    ...p,
-    subtitle: p.subtitle || p.tagline || 'Single-Origin Kashmir Harvest',
-    tagline: p.tagline || p.subtitle || 'Single-Origin Kashmir Harvest',
-    primaryImage:
-        p.primaryImage ||
-        (Array.isArray(p.images) && p.images[0]) ||
-        '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg',
-    origin: p.origin || p.certificate?.originDistrict || 'Shopian & Pulwama, Kashmir',
-    batchCode: p.batchCode || p.certificate?.certificateNumber || 'KB-2026-BATCH',
-    reviewsCount: p.reviewsCount ?? p.reviewCount ?? 42,
-});
+const formatProductForAdmin = (p) => {
+    const id = p._id ? String(p._id) : (p.id ? String(p.id) : (p.slug || 'kb-prod-unknown'));
+    return {
+        ...p,
+        _id: id,
+        id: id,
+        subtitle: p.subtitle || p.tagline || '',
+        tagline: p.tagline || p.subtitle || '',
+        primaryImage:
+            p.primaryImage ||
+            (Array.isArray(p.images) && p.images[0]) ||
+            '',
+        origin: p.origin || p.certificate?.originDistrict || '',
+        batchCode: p.batchCode || p.certificate?.certificateNumber || '',
+        reviewsCount: p.reviewsCount ?? p.reviewCount ?? 0,
+    };
+};
 
 const formatOrderForAdmin = (o) => ({
     ...o,
@@ -105,6 +113,12 @@ export class AdminService {
 
     // 2. Inventory & Products
     static async getProducts() {
+        if (mongoose.connection.readyState === 1) {
+            const dbProducts = await Product.find().sort({ createdAt: -1 }).lean().catch(() => null);
+            if (Array.isArray(dbProducts)) {
+                return dbProducts.map(formatProductForAdmin);
+            }
+        }
         return productsStore.map(formatProductForAdmin);
     }
 
@@ -143,129 +157,198 @@ export class AdminService {
             '-' +
             Math.floor(100 + Math.random() * 900);
 
-        const parsedWeights =
-            Array.isArray(netWeights) && netWeights.length > 0
-                ? netWeights.map((w) => ({
-                      weight: String(w.weight || '500g'),
-                      price: Number(w.price || price || 499),
-                      originalPrice: Number(w.originalPrice || Math.round(Number(w.price || price || 499) * 1.2)),
-                      inStock: w.inStock !== false,
-                      stockQuantity: Number(w.stockQuantity ?? 50),
-                  }))
-                : [
-                      { weight: '250g', price: Math.round(Number(price || 499) * 0.55), originalPrice: Math.round(Number(price || 499) * 0.7), inStock: true, stockQuantity: 40 },
-                      { weight: '500g', price: Number(price || 499), originalPrice: Math.round(Number(price || 499) * 1.25), inStock: true, stockQuantity: 60 },
-                      { weight: '1kg', price: Math.round(Number(price || 499) * 1.85), originalPrice: Math.round(Number(price || 499) * 2.2), inStock: true, stockQuantity: 30 },
-                  ];
+        let parsedWeights = [];
+        if (Array.isArray(netWeights) && netWeights.length > 0) {
+            parsedWeights = netWeights
+                .filter((w) => w && (w.weight || w.price))
+                .map((w) => ({
+                    weight: String(w.weight || '500g').trim(),
+                    price: Number(w.price || price || 0),
+                    originalPrice: Number(w.originalPrice || Math.round(Number(w.price || price || 0) * 1.25)),
+                    inStock: w.inStock !== false,
+                    stockQuantity: Number(w.stockQuantity ?? stockQuantity ?? 50),
+                }));
+        }
 
-        const basePrice = parsedWeights[0]?.price || Number(price) || 499;
-        const resolvedImages =
-            Array.isArray(images) && images.length > 0
-                ? images
-                : primaryImage
-                ? [primaryImage]
-                : ['/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg'];
+        const basePrice = parsedWeights[0]?.price || Number(price) || 0;
+        const sanitizedImages = Array.isArray(images)
+            ? images.map((img) => String(img || '').trim()).filter(Boolean)
+            : primaryImage
+            ? [String(primaryImage).trim()]
+            : [];
 
+        if (primaryImage && typeof primaryImage === 'string' && primaryImage.trim() && !sanitizedImages.includes(primaryImage.trim())) {
+            sanitizedImages.unshift(primaryImage.trim());
+        }
+
+        const resolvedImages = sanitizedImages;
+        const resolvedPrimaryImage = (primaryImage && typeof primaryImage === 'string' && primaryImage.trim()) || resolvedImages[0] || '';
+
+        const generatedId = new mongoose.Types.ObjectId();
         const newProduct = {
-            _id: `kb-prod-${Date.now()}`,
+            _id: generatedId.toString(),
             name,
             slug,
             category,
-            tagline: tagline || subtitle || 'Authentic Kashmir Valley single-origin harvest',
-            subtitle: subtitle || tagline || 'Authentic Kashmir Valley single-origin harvest',
-            description:
-                description ||
-                'Handpicked from high-altitude Kashmiri orchards and cold-packed in Srinagar with zero chemical bleaching.',
-            price: Number(price || basePrice),
-            originalPrice: Number(originalPrice || Math.round(Number(price || basePrice) * 1.25)),
-            rating: 4.9,
-            reviewCount: 1,
-            reviewsCount: 1,
+            tagline: (tagline || subtitle || name).trim(),
+            subtitle: (subtitle || tagline || name).trim(),
+            description: (description || tagline || subtitle || name).trim(),
+            price: Number(price || basePrice || 0),
+            originalPrice: Number(originalPrice || (price || basePrice ? Math.round(Number(price || basePrice) * 1.25) : 0)),
+            rating: 5.0,
+            reviewCount: 0,
+            reviewsCount: 0,
             images: resolvedImages,
-            primaryImage: resolvedImages[0],
-            origin: origin || originDistrict || 'Shopian & Pulwama, Kashmir',
-            batchCode: batchCode || `KB-2026-${Math.floor(100 + Math.random() * 900)}`,
+            primaryImage: resolvedPrimaryImage,
+            origin: origin || originDistrict || '',
+            batchCode: batchCode || '',
             netWeights: parsedWeights,
-            nutrition: payload.nutrition || {
-                calories: '580 kcal per 100g',
-                protein: '16.0g',
-                healthyFats: '52.0g',
-                carbs: '18.0g',
-                fiber: '8.0g',
-            },
-            certificate: payload.certificate || {
-                certificateNumber: batchCode || `JK-HORT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-                issuedBy: 'Kashmir Horticulture & Food Safety Analytical Laboratory, Srinagar',
-                labTestDate: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
-                purityScore: '99.9% Single Origin',
-                moistureLevel: '3.5%',
-                aflatoxinStatus: 'Undetected (<0.5 ppb)',
-                originDistrict: origin || originDistrict || 'Shopian & Pulwama, Jammu & Kashmir',
-                harvestSeason: 'Autumn 2026 Harvest',
-            },
-            packagingVideo: payload.packagingVideo || {
-                title: 'Hygienic Cold-Packing at Srinagar Hub',
-                duration: '0:45',
-                thumbnail: resolvedImages[0],
-                facilityLocation: 'Industrial Estate, Sanat Nagar, Srinagar',
-                cleanlinessStandard: 'Class 10,000 ISO Clean Packing Facility',
-                steps: [
-                    'Optical & manual sorting of harvest crop',
-                    'Nitrogen flush to preserve natural oils',
-                    'Hermetic moisture-barrier pouch sealing',
-                    'Batch authentication laser print',
-                ],
-            },
-            badges: Array.isArray(badges) && badges.length > 0 ? badges : ['100% Kashmir Origin', 'Direct from Growers'],
+            nutrition: payload.nutrition || null,
+            certificate: payload.certificate || null,
+            packagingVideo: payload.packagingVideo || null,
+            badges: Array.isArray(badges) ? badges : [],
             featured: Boolean(featured),
             isCombo: Boolean(isCombo || category.toLowerCase().includes('combo')),
             inStock: inStock !== false,
-            stockQuantity: Number(stockQuantity ?? 120),
+            stockQuantity: Number(stockQuantity ?? 100),
             promotionalOfferTag: promotionalOfferTag || '',
         };
 
         productsStore.unshift(newProduct);
+
+        if (mongoose.connection.readyState === 1) {
+            await Product.create(newProduct).catch((err) => {
+                console.warn('[MongoDB] Product create fallback to memory:', err.message);
+            });
+        }
+
         return formatProductForAdmin(newProduct);
     }
 
     static async updateProduct({ id, updates }) {
-        const idx = productsStore.findIndex((p) => p._id === id || p.slug === id);
-        if (idx === -1) {
+        if (!id) {
+            throw ApiError.badRequest('Product ID or slug is required');
+        }
+
+        const stringId = String(id).trim();
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(stringId);
+        const query = isValidObjectId
+            ? { $or: [{ _id: stringId }, { slug: stringId }] }
+            : { slug: stringId };
+
+        let idx = productsStore.findIndex(
+            (p) =>
+                String(p._id) === stringId ||
+                String(p.id) === stringId ||
+                String(p.slug) === stringId
+        );
+
+        let existing = idx !== -1 ? productsStore[idx] : null;
+        if (!existing && mongoose.connection.readyState === 1) {
+            existing = await Product.findOne(query).lean().catch(() => null);
+        }
+
+        if (!existing) {
             throw ApiError.notFound('Product not found');
         }
 
+        const parsedUpdates = { ...updates };
+
+        if (updates.images !== undefined) {
+            const sanitizedImages = Array.isArray(updates.images)
+                ? updates.images.map((img) => String(img || '').trim()).filter(Boolean)
+                : updates.primaryImage
+                ? [String(updates.primaryImage).trim()]
+                : [];
+            if (sanitizedImages.length > 0) {
+                parsedUpdates.images = sanitizedImages;
+                parsedUpdates.primaryImage = updates.primaryImage || sanitizedImages[0];
+            }
+        }
+
+        if (Array.isArray(updates.netWeights)) {
+            parsedUpdates.netWeights = updates.netWeights
+                .filter((w) => w && (w.weight || w.price))
+                .map((w) => ({
+                    weight: String(w.weight || '500g').trim(),
+                    price: Number(w.price || 499),
+                    originalPrice: Number(w.originalPrice || Math.round(Number(w.price || 499) * 1.25)),
+                    inStock: w.inStock !== false,
+                    stockQuantity: Number(w.stockQuantity ?? 50),
+                }));
+        }
+
         const updated = {
-            ...productsStore[idx],
-            ...updates,
-            tagline: updates.tagline || updates.subtitle || productsStore[idx].tagline,
-            subtitle: updates.subtitle || updates.tagline || productsStore[idx].subtitle,
-            price: updates.price !== undefined ? Number(updates.price) : productsStore[idx].price,
+            ...existing,
+            ...parsedUpdates,
+            tagline: parsedUpdates.tagline || parsedUpdates.subtitle || existing.tagline,
+            subtitle: parsedUpdates.subtitle || parsedUpdates.tagline || existing.subtitle,
+            price: parsedUpdates.price !== undefined ? Number(parsedUpdates.price) : existing.price,
             originalPrice:
-                updates.originalPrice !== undefined
-                    ? Number(updates.originalPrice)
-                    : productsStore[idx].originalPrice,
+                parsedUpdates.originalPrice !== undefined
+                    ? Number(parsedUpdates.originalPrice)
+                    : existing.originalPrice,
             stockQuantity:
-                updates.stockQuantity !== undefined
-                    ? Number(updates.stockQuantity)
-                    : productsStore[idx].stockQuantity,
+                parsedUpdates.stockQuantity !== undefined
+                    ? Number(parsedUpdates.stockQuantity)
+                    : existing.stockQuantity,
         };
-        productsStore[idx] = updated;
+
+        if (idx !== -1) {
+            productsStore[idx] = updated;
+        } else {
+            productsStore.unshift(updated);
+        }
+
+        if (mongoose.connection.readyState === 1) {
+            await Product.findOneAndUpdate(
+                query,
+                { $set: updated },
+                { new: true }
+            ).catch(() => null);
+        }
+
         return formatProductForAdmin(updated);
     }
 
     static async toggleProductStock({ id, inStock, variantWeight, stockQuantity }) {
-        const product = productsStore.find((p) => p._id === id || p.slug === id);
+        if (!id) {
+            throw ApiError.badRequest('Product ID or slug is required');
+        }
+
+        const stringId = String(id).trim();
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(stringId);
+        const query = isValidObjectId
+            ? { $or: [{ _id: stringId }, { slug: stringId }] }
+            : { slug: stringId };
+
+        let idx = productsStore.findIndex(
+            (p) =>
+                String(p._id) === stringId ||
+                String(p.id) === stringId ||
+                String(p.slug) === stringId
+        );
+
+        let product = idx !== -1 ? productsStore[idx] : null;
+        if (!product && mongoose.connection.readyState === 1) {
+            product = await Product.findOne(query).lean().catch(() => null);
+            if (product) {
+                productsStore.push(product);
+                idx = productsStore.length - 1;
+            }
+        }
+
         if (!product) {
             throw ApiError.notFound('Product not found');
         }
 
         if (variantWeight) {
-            const variant = product.netWeights.find((w) => w.weight === variantWeight);
+            const variant = product.netWeights?.find((w) => w.weight === variantWeight);
             if (variant) {
                 variant.inStock = inStock !== undefined ? Boolean(inStock) : !variant.inStock;
                 if (stockQuantity !== undefined) variant.stockQuantity = Number(stockQuantity);
             }
-            product.inStock = product.netWeights.some((w) => w.inStock);
+            product.inStock = product.netWeights?.some((w) => w.inStock) ?? true;
         } else {
             product.inStock = inStock !== undefined ? Boolean(inStock) : !product.inStock;
             if (stockQuantity !== undefined) {
@@ -275,9 +358,19 @@ export class AdminService {
             } else if (product.stockQuantity === 0) {
                 product.stockQuantity = 100;
             }
-            product.netWeights.forEach((w) => {
-                w.inStock = product.inStock;
-            });
+            if (Array.isArray(product.netWeights)) {
+                product.netWeights.forEach((w) => {
+                    w.inStock = product.inStock;
+                });
+            }
+        }
+
+        if (mongoose.connection.readyState === 1) {
+            await Product.findOneAndUpdate(
+                query,
+                { $set: { inStock: product.inStock, stockQuantity: product.stockQuantity, netWeights: product.netWeights } },
+                { new: true }
+            ).catch(() => null);
         }
 
         return formatProductForAdmin(product);
@@ -329,16 +422,67 @@ export class AdminService {
     }
 
     static async deleteProduct({ id }) {
-        const idx = productsStore.findIndex((p) => p._id === id || p.slug === id);
-        if (idx === -1) {
+        if (!id) {
+            throw ApiError.badRequest('Product ID or slug is required');
+        }
+
+        const stringId = String(id).trim();
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(stringId);
+        const query = isValidObjectId
+            ? { $or: [{ _id: stringId }, { slug: stringId }] }
+            : { slug: stringId };
+
+        let dbDeleted = null;
+        if (mongoose.connection.readyState === 1) {
+            dbDeleted = await Product.findOneAndDelete(query).catch((err) => {
+                console.warn('[AdminService] DB delete error:', err.message);
+                return null;
+            });
+        }
+
+        const idx = productsStore.findIndex(
+            (p) =>
+                String(p._id) === stringId ||
+                String(p.id) === stringId ||
+                String(p.slug) === stringId
+        );
+
+        if (idx !== -1) {
+            productsStore.splice(idx, 1);
+        } else if (!dbDeleted) {
             throw ApiError.notFound('Product not found');
         }
-        productsStore.splice(idx, 1);
-        return { deleted: true, id };
+
+        return { deleted: true, id: stringId };
     }
 
     // 3. Categories Management
     static async getCategories() {
+        if (mongoose.connection.readyState === 1) {
+            const [dbCategories, dbProducts] = await Promise.all([
+                Category.find().lean().catch(() => null),
+                Product.find({}, 'category').lean().catch(() => []),
+            ]);
+            if (Array.isArray(dbCategories) && dbCategories.length > 0) {
+                return dbCategories.map((c) => {
+                    const catId = c.id || c.slug || c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    const count = (dbProducts || []).filter(
+                        (p) =>
+                            p.category &&
+                            (p.category.toLowerCase() === catId.toLowerCase() ||
+                             p.category.toLowerCase() === c.name.toLowerCase())
+                    ).length;
+                    return {
+                        ...c,
+                        _id: c._id ? String(c._id) : catId,
+                        id: catId,
+                        slug: catId,
+                        productCount: count,
+                    };
+                });
+            }
+        }
+
         return categoriesStore.map((c) => ({
             ...c,
             _id: c.id,

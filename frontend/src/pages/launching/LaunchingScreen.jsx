@@ -44,7 +44,7 @@ const HARVEST_PREVIEWS = [
   },
   {
     name: 'Emerald Hamper',
-    origin: 'Srinagar Atelier',
+    origin: appConfig.brand.atelierName || 'Srinagar Atelier',
     highlight: '6 Hermetic Jars',
   },
 ];
@@ -178,11 +178,11 @@ export const LaunchingScreen = () => {
   };
 
   const shareText = encodeURIComponent(
-    `Exclusive Prelaunch Access: Authentic Himalayan walnuts, Mamra almonds & festive dry fruits from KashBites! Register for early launch access: ${window.location.origin}`
+    `Exclusive Prelaunch Access: Authentic Himalayan walnuts, Mamra almonds & festive dry fruits from ${appConfig.brand.name}! Register for early launch access: ${window.location.origin}`
   );
 
   return (
-    <div className="h-screen h-dvh max-h-screen w-screen overflow-hidden bg-brand-emerald-darker text-brand-sand-light font-sans selection:bg-brand-gold selection:text-brand-emerald-deep relative flex flex-col justify-between">
+    <div className="min-h-screen min-h-dvh w-full overflow-x-hidden overflow-y-auto bg-brand-emerald-darker text-brand-sand-light font-sans selection:bg-brand-gold selection:text-brand-emerald-deep relative flex flex-col justify-between">
       {/* Background Ambience & Kashmiri Atmospheric Glow */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         {/* Subtle Himalayan mountain silhouette / hero texture at very low opacity */}
@@ -207,59 +207,50 @@ export const LaunchingScreen = () => {
       <header className="relative z-10 shrink-0 border-b border-brand-emerald/40 bg-brand-emerald-deep/90 backdrop-blur-md px-4 sm:px-6 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Logo variant="light" size="sm" />
-          <span className="hidden md:inline-block h-4 w-[1px] bg-brand-emerald/60"></span>
+          {/* <span className="hidden md:inline-block h-4 w-[1px] bg-brand-emerald/60"></span> */}
           <div className="hidden md:flex items-center gap-1.5 text-xs text-brand-sand-medium">
-            <span className="flex h-2 w-2 relative">
+            {/* <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-gold-bright"></span>
-            </span>
-            <span>Srinagar Atelier Harvest Dispatch · Final Preparations</span>
+            </span> */}
+            {/* <span>{appConfig.brand.atelierName} Harvest Dispatch · Final Preparations</span> */}
           </div>
         </div>
 
         <div className="flex items-center gap-2.5">
-          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-brand-emerald/60 border border-brand-gold/30 text-brand-gold-bright">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-medium bg-brand-emerald/60 border border-brand-gold/30 text-brand-gold-bright">
             <Award className="w-3 h-3 text-brand-gold" />
-            100% Single-Origin Kashmir
+            <span className="hidden sm:inline">100% Single-Origin Kashmir</span>
+            <span className="sm:hidden">Single-Origin</span>
           </span>
-
-          {/* Discreet Internal Preview for Team Testing */}
-          {/* <button
-            onClick={() => navigate('/prelaunch')}
-            className="text-[11px] text-brand-sand-medium/70 hover:text-brand-gold transition-colors flex items-center gap-1 px-2 py-1 rounded border border-transparent hover:border-brand-emerald/50 cursor-pointer"
-            title="Team Testing Access: View Prelaunch Storefront"
-          >
-            <Lock className="w-3 h-3 opacity-70" />
-            <span className="hidden xs:inline">Internal Preview</span>
-          </button> */}
         </div>
       </header>
 
-      {/* 2. Main Content (Flex-1, Fits perfectly without scrolling) */}
-      <main className="relative z-10 flex-1 min-h-0 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-2 sm:py-3 overflow-hidden">
-        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8 items-center">
+      {/* 2. Main Content */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-4">
+        <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-8 items-center">
           
           {/* Left Column: Brand Story, Headline & Countdown (lg:col-span-7) */}
           <div className="lg:col-span-7 flex flex-col justify-center space-y-3 sm:space-y-4">
             {/* Eyebrow Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-emerald/80 border border-brand-gold/40 text-brand-gold-bright text-[11px] font-semibold tracking-wider uppercase shadow-sm self-start">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-emerald/80 border border-brand-gold/40 text-brand-gold-bright text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase shadow-sm self-start">
               <Sparkles className="w-3 h-3 text-brand-gold-bright shrink-0" />
               <span>Autumn 2026 Harvest · Grand Launch Imminent</span>
             </div>
 
             {/* Headline */}
             <div className="space-y-1.5">
-              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.12]">
+              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.18] sm:leading-[1.12]">
                 The Authentic Taste of Kashmir Is Getting Ready to Launch
               </h1>
               <p className="text-xs sm:text-sm text-brand-sand-light/85 leading-relaxed max-w-xl font-normal">
                 Centennial orchard Kagzi walnuts, cold-shelled Mamra almonds, and royal festive hampers
-                direct from our Srinagar packaging atelier. 100% pure, unbleached, and chemical-free.
+                direct from our {appConfig.brand.originCity} packaging atelier. 100% pure, unbleached, and chemical-free.
               </p>
             </div>
 
             {/* Live Countdown Clock */}
-            <div className="bg-brand-emerald-deep/70 backdrop-blur-md border border-brand-emerald/60 rounded-2xl p-2.5 sm:p-3 shadow-md max-w-lg">
+            <div className="bg-brand-emerald-deep/70 backdrop-blur-md border border-brand-emerald/60 rounded-2xl p-2.5 sm:p-3 shadow-md max-w-lg w-full">
               <div className="flex items-center justify-between mb-2 px-1">
                 <span className="text-[10px] sm:text-[11px] uppercase tracking-widest text-brand-gold-bright font-bold flex items-center gap-1">
                   <Clock className="w-3 h-3 text-brand-gold" />
@@ -268,7 +259,7 @@ export const LaunchingScreen = () => {
                 <span className="text-[10px] text-brand-sand-medium/80">Doors opening soon</span>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
                 {[
                   { label: 'Days', value: timeLeft.days },
                   { label: 'Hours', value: timeLeft.hours },
@@ -291,7 +282,7 @@ export const LaunchingScreen = () => {
             </div>
 
             {/* Harvest Highlights Mini Strip */}
-            <div className="hidden sm:grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-lg">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-lg w-full">
               {HARVEST_PREVIEWS.map((item, i) => (
                 <div
                   key={i}
@@ -304,7 +295,7 @@ export const LaunchingScreen = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="hidden sm:flex items-center gap-3 pt-1 text-[11px] text-brand-sand-medium/90">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 text-[11px] text-brand-sand-medium/90">
               <span className="flex items-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-gold shrink-0" />
                 <span>Zero Bleach</span>
@@ -317,7 +308,7 @@ export const LaunchingScreen = () => {
               <span>·</span>
               <span className="flex items-center gap-1">
                 <Award className="w-3.5 h-3.5 text-brand-gold shrink-0" />
-                <span>FSSAI Certified</span>
+                <span>{appConfig.brand.fssai.label}</span>
               </span>
             </div>
           </div>
@@ -448,13 +439,13 @@ export const LaunchingScreen = () => {
                         </select>
 
                         {/* Phone Input */}
-                        <div className="relative flex-1">
+                        <div className="relative flex-1 min-w-0">
                           <input
                             type="tel"
                             required
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            placeholder="e.g. 98765 43210"
+                            placeholder={`e.g. ${appConfig.brand.contact.phonePlaceholder}`}
                             className="w-full px-3 py-2 rounded-xl bg-brand-emerald-deep/90 border border-brand-emerald/70 focus:border-brand-gold text-xs text-white placeholder:text-brand-sand-medium/50 outline-none transition-colors"
                           />
                         </div>
@@ -470,15 +461,15 @@ export const LaunchingScreen = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-brand-gold hover:bg-brand-gold-bright active:scale-[0.99] text-brand-emerald-deep font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-brand-gold/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                      className="w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl bg-brand-gold hover:bg-brand-gold-bright active:scale-[0.99] text-brand-emerald-deep font-bold text-xs sm:text-sm transition-all shadow-md hover:shadow-brand-gold/30 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 text-center"
                     >
                       {isSubmitting ? (
                         <span>Registering for VIP Access...</span>
                       ) : (
                         <>
-                          <Phone className="w-3.5 h-3.5 fill-brand-emerald-deep" />
+                          <Phone className="w-3.5 h-3.5 fill-brand-emerald-deep shrink-0" />
                           <span>Get 20% OFF Coupon on WhatsApp</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
                         </>
                       )}
                     </button>
@@ -537,29 +528,21 @@ export const LaunchingScreen = () => {
       </main>
 
       {/* 3. Footer (Single-Line Compact Bar) */}
-      <footer className="relative z-10 shrink-0 border-t border-brand-emerald/40 bg-brand-emerald-deep/95 backdrop-blur-md px-4 sm:px-6 py-2 text-[11px] text-brand-sand-medium flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span>© 2026 KashBites Agro Pvt Ltd.</span>
+      <footer className="relative z-10 shrink-0 border-t border-brand-emerald/40 bg-brand-emerald-deep/95 backdrop-blur-md px-4 sm:px-6 py-2.5 sm:py-2 text-[11px] text-brand-sand-medium flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
+          <span>© {new Date().getFullYear()} {appConfig.brand.companyName || appConfig.brand.name}</span>
           <span className="hidden sm:inline">·</span>
-          <span className="hidden sm:inline">Packaging Atelier: Sanat Nagar, Srinagar, J&K – 190005</span>
+          <span className="hidden sm:inline">{appConfig.brand.packagingAtelier || appConfig.brand.address}</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span>Inquiries: <a href="mailto:hello@kashbites.in" className="text-brand-gold hover:underline">hello@kashbites.in</a></span>
-          <span>·</span>
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-3">
+          <span>Inquiries: <a href={`mailto:${appConfig.brand.contact.email}`} className="text-brand-gold hover:underline">{appConfig.brand.contact.email}</a></span>
+          {/* <span>·</span> */}
           <span className="flex items-center gap-1">
-            <span>Crafted with</span>
+            {/* <span>Crafted with</span>
             <Heart className="w-3 h-3 text-brand-gold fill-brand-gold" />
-            <span>in Kashmir</span>
+            <span>in Kashmir</span> */}
           </span>
-          <span>·</span>
-          <button
-            onClick={() => navigate('/prelaunch')}
-            className="text-brand-gold/80 hover:text-brand-gold font-medium underline cursor-pointer"
-            title="Team Testing Access: View Prelaunch Storefront"
-          >
-            Staff Portal →
-          </button>
         </div>
       </footer>
     </div>

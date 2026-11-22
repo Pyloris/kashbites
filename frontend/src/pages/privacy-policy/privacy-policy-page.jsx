@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '../../components/ui/index.js';
 import { PrivacySections } from './components/index.js';
+import { appConfig } from '../../config/app-config.js';
 
 export const PrivacyPolicyPage = () => {
   return (
@@ -14,7 +15,7 @@ export const PrivacyPolicyPage = () => {
             Privacy Policy
           </h1>
           <p className="text-xs text-brand-text-muted">
-            Last Updated: November 2026 · KashBites Agro Pvt Ltd, Srinagar
+            Last Updated: November 2026 · {appConfig.brand.companyName}, {appConfig.brand.originCity}
           </p>
         </div>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Logo } from '../../components/ui/index.js';
 import { MapPin, Heart } from 'lucide-react';
+import { appConfig } from '../../config/app-config.js';
 
 export const Footer = ({ onNavigate, onOpenTracking }) => {
   const navigate = useNavigate();
@@ -155,9 +156,9 @@ export const Footer = ({ onNavigate, onOpenTracking }) => {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-brand-emerald/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-brand-text-subtle">
           <div className="flex flex-wrap items-center gap-2">
-            <span>© 2026 KashBites Agro Pvt Ltd. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} {appConfig.brand.companyName}. All rights reserved.</span>
             <span>·</span>
-            <span className="text-brand-gold">FSSAI Lic. No: 11026999000142</span>
+            <span className="text-brand-gold">{appConfig.brand.fssai.fullDisplay}</span>
             <span>·</span>
             <Link to="/prelaunch/privacy-policy" className="hover:underline">Privacy</Link>
             <span>·</span>

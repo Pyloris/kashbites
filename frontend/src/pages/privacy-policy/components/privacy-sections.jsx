@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card } from '../../../components/ui/index.js';
 import { ShieldCheck, FileText, Lock, Eye } from 'lucide-react';
+import { appConfig } from '../../../config/app-config.js';
 
 export const PrivacySections = () => {
   return (
@@ -15,7 +16,7 @@ export const PrivacySections = () => {
           </h2>
         </div>
         <p className="text-xs sm:text-sm text-brand-text-body leading-relaxed">
-          At KashBites (KashBites Agro Pvt Ltd), we value your trust as deeply as our Kashmir Valley harvests. We respect your personal privacy and comply strictly with the Information Technology Act, 2000 (India) and applicable consumer privacy guidelines. We do not sell, rent, or trade your personal information to third-party advertisers.
+          At {appConfig.brand.name} ({appConfig.brand.companyName}), we value your trust as deeply as our Kashmir Valley harvests. We respect your personal privacy and comply strictly with the Information Technology Act, 2000 (India) and applicable consumer privacy guidelines. We do not sell, rent, or trade your personal information to third-party advertisers.
         </p>
       </Card>
 
