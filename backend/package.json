@@ -19,6 +19,7 @@
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "ioredis": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
     "minio": "^8.0.4",
     "mongoose": "^8.9.5",
     "morgan": "^1.12.1",

@@ -1,6 +1,8 @@
 import { User } from '../database/models/users.model.js';
-import { usersStore } from '../data/store.js';
+import { Admin } from '../database/models/admins.model.js';
+import { usersStore, adminsStore } from '../data/store.js';
 import { ApiError } from '../errors/api-error.js';
+import { signToken, verifyToken } from '../middleware/auth/index.js';
 import mongoose from 'mongoose';
 
 export class AuthService {
@@ -16,8 +18,15 @@ export class AuthService {
             if (user && user.password === password) {
                 const userObj = user.toObject();
                 delete userObj.password;
+                const token = signToken({
+                    id: String(user._id),
+                    userId: String(user._id),
+                    email: user.email,
+                    name: user.name,
+                    role: user.role || 'member',
+                });
                 return {
-                    token: `jwt_token_${user._id}`,
+                    token,
                     user: userObj,
                 };
             }
@@ -26,8 +35,15 @@ export class AuthService {
         const user = usersStore.find((u) => u.email.toLowerCase() === cleanEmail && u.password === password);
         if (user) {
             const { password: _, ...userData } = user;
+            const token = signToken({
+                id: String(user._id || user.id),
+                userId: String(user._id || user.id),
+                email: user.email,
+                name: user.name,
+                role: user.role || 'member',
+            });
             return {
-                token: `jwt_token_${user._id}`,
+                token,
                 user: userData,
             };
         }
@@ -77,21 +93,51 @@ export class AuthService {
             const created = await User.create(newUser);
             const userObj = created.toObject();
             delete userObj.password;
+            const token = signToken({
+                id: String(created._id),
+                userId: String(created._id),
+                email: created.email,
+                name: created.name,
+                role: created.role || 'member',
+            });
             return {
-                token: `jwt_token_${created._id}`,
+                token,
                 user: userObj,
             };
         }
 
         const { password: _, ...userData } = newUser;
+        const token = signToken({
+            id: String(newUser._id),
+            userId: String(newUser._id),
+            email: newUser.email,
+            name: newUser.name,
+            role: newUser.role || 'member',
+        });
         return {
-            token: `jwt_token_${newUser._id}`,
+            token,
             user: userData,
         };
     }
 
-    static async getMe({ authHeader }) {
-        const userId = authHeader ? authHeader.replace('Bearer ', '').replace('jwt_token_', '') : null;
+    static async getMe({ authHeader, userId: explicitUserId } = {}) {
+        let userId = explicitUserId;
+        if (!userId && authHeader) {
+            const raw = String(authHeader).replace(/^Bearer\s+/i, '').trim();
+            if (raw.startsWith('jwt_token_')) {
+                userId = raw.replace('jwt_token_', '');
+            } else if (raw.startsWith('admin_jwt_')) {
+                userId = raw.replace('admin_jwt_', '');
+            } else {
+                try {
+                    const decoded = verifyToken(raw);
+                    userId = decoded.id || decoded.userId || decoded._id || decoded.sub;
+                } catch {
+                    userId = raw;
+                }
+            }
+        }
+
         if (!userId) {
             throw ApiError.unauthorized('Invalid authorization token');
         }
@@ -101,9 +147,6 @@ export class AuthService {
             let user = null;
             if (mongoose.Types.ObjectId.isValid(userId)) {
                 user = await User.findById(userId);
-            }
-            if (!user) {
-                user = await User.findOne({ _id: userId });
             }
             if (user) {
                 const userObj = user.toObject();
@@ -117,6 +160,28 @@ export class AuthService {
         if (user) {
             const { password: _, ...userData } = user;
             return userData;
+        }
+
+        // 3. Query Admin / adminsStore if an admin/superadmin is calling getMe
+        if (mongoose.connection.readyState === 1) {
+            let admin = null;
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+                admin = await Admin.findById(userId);
+            }
+            if (!admin) {
+                admin = await Admin.findOne({ username: userId });
+            }
+            if (admin) {
+                const adminObj = admin.toObject();
+                delete adminObj.password;
+                return adminObj;
+            }
+        }
+
+        const adminUser = adminsStore.find((a) => String(a._id) === String(userId) || a.username === userId);
+        if (adminUser) {
+            const { password: _, ...adminData } = adminUser;
+            return adminData;
         }
 
         throw ApiError.notFound('User not found');

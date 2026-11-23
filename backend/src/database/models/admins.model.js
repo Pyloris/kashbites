@@ -5,7 +5,7 @@ const AdminSchema = new Schema({
     password: { type: String, required: true },
     name: { type: String, required: true },
     email: { type: String, required: true },
-    role: { type: String, enum: ['superadmin', 'manager'], default: 'superadmin' },
+    role: { type: String, enum: ['superadmin'], default: 'superadmin' },
     lastLogin: { type: String, default: () => new Date().toISOString() },
 }, { timestamps: true });
 

@@ -5,6 +5,7 @@ const UserSchema = new Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
+    role: { type: String, enum: ['member'], default: 'member' },
     avatar: { type: String },
     memberTier: { type: String, default: 'Chinar Gold Member' },
     chinarPoints: { type: Number, default: 250 },

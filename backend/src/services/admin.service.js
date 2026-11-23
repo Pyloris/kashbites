@@ -14,6 +14,7 @@ import { ApiError } from '../errors/api-error.js';
 import { PrelaunchLead } from '../database/models/prelaunch-leads.model.js';
 import { Product } from '../database/models/products.model.js';
 import { Category } from '../database/models/categories.model.js';
+import { signToken } from '../middleware/auth/index.js';
 import mongoose from 'mongoose';
 
 const formatProductForAdmin = (p) => {
@@ -74,8 +75,18 @@ export class AdminService {
         admin.lastLogin = new Date().toISOString();
         const { password: _, ...adminData } = admin;
 
+        const token = signToken({
+            id: admin._id || admin.username || 'admin',
+            userId: admin._id || admin.username || 'admin',
+            username: admin.username,
+            email: admin.email,
+            name: admin.name || admin.fullName || 'Shoaib Wani',
+            role: admin.role || 'superadmin',
+            isAdmin: true,
+        });
+
         return {
-            token: `admin_jwt_${admin._id}`,
+            token,
             admin: {
                 ...adminData,
                 fullName: admin.name || admin.fullName || 'Shoaib Wani',

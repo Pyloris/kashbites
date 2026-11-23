@@ -18,8 +18,8 @@ export const appConfig = {
   // Brand & Origin Details
   brand: {
     name: import.meta.env.VITE_BRAND_NAME || 'KashBites',
-    companyName: import.meta.env.VITE_COMPANY_NAME || 'KashBites Agro Pvt Ltd',
-    legalName: import.meta.env.VITE_BRAND_LEGAL_NAME || 'KashBites Agro Pvt Ltd',
+    companyName: import.meta.env.VITE_COMPANY_NAME || 'KashBites',
+    legalName: import.meta.env.VITE_BRAND_LEGAL_NAME || 'KashBites',
     tagline: import.meta.env.VITE_BRAND_TAGLINE || 'A Taste of Kashmir | Premium Dry Fruits',
     origin: import.meta.env.VITE_BRAND_ORIGIN || 'Ganderbal, Kashmir Valley',
     originCity: import.meta.env.VITE_BRAND_ORIGIN_CITY || 'Srinagar',

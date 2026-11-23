@@ -27,30 +27,35 @@ export class AuthController {
 
     static getMe = catchError(async (req, res) => {
         const authHeader = req.headers.authorization;
-        const user = await AuthService.getMe({ authHeader });
+        const userId = req.user?.id;
+        const user = await AuthService.getMe({ authHeader, userId });
         return ApiResponse.success(res, user, 'Profile retrieved successfully');
     });
 
     static updateProfile = catchError(async (req, res) => {
-        const { id, email, name, phone, notifications } = req.body;
+        const id = req.body.id || req.user?.id;
+        const { email, name, phone, notifications } = req.body;
         const user = await AuthService.updateProfile({ id, email, name, phone, notifications });
         return ApiResponse.success(res, user, 'Profile updated successfully');
     });
 
     static addAddress = catchError(async (req, res) => {
-        const { userId, address } = req.body;
+        const userId = req.body.userId || req.user?.id;
+        const { address } = req.body;
         const user = await AuthService.addAddress({ userId, address });
         return ApiResponse.success(res, user, 'Address saved successfully');
     });
 
     static deleteAddress = catchError(async (req, res) => {
-        const { userId, addressId } = req.params;
+        const userId = req.params.userId || req.user?.id;
+        const { addressId } = req.params;
         const user = await AuthService.deleteAddress({ userId, addressId });
         return ApiResponse.success(res, user, 'Address removed successfully');
     });
 
     static setDefaultAddress = catchError(async (req, res) => {
-        const { userId, addressId } = req.params;
+        const userId = req.params.userId || req.user?.id;
+        const { addressId } = req.params;
         const user = await AuthService.setDefaultAddress({ userId, addressId });
         return ApiResponse.success(res, user, 'Default address updated successfully');
     });

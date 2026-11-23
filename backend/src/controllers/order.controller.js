@@ -102,7 +102,7 @@ export class OrderController {
      * List orders
      */
     static getAllOrders = catchError(async (req, res) => {
-        const customerId = req.query?.customerId || (req.user?.role === 'customer' ? req.user.id : undefined);
+        const customerId = req.query?.customerId || ((req.user?.role === 'member' || req.user?.role === 'customer') ? req.user.id : undefined);
         const customerEmail = req.query?.email;
         const orders = await OrderService.list({ customerId, customerEmail });
         return ApiResponse.success(res, orders, 'Orders retrieved successfully');

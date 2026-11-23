@@ -110,6 +110,7 @@ export const usersStore = [
         email: 'mohammadowais616@gmail.com',
         phone: '+91 98765 43210',
         password: 'password123',
+        role: 'member',
         avatar: '',
         memberTier: 'Chinar Gold Member',
         chinarPoints: 450,

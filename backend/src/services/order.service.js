@@ -296,6 +296,7 @@ export class OrderService {
             email: guestEmail,
             phone: guestPhone,
             password: generatedPassword,
+            role: 'member',
             memberTier: 'Chinar Club Member',
             chinarPoints: 100,
             addresses: initialAddresses,
