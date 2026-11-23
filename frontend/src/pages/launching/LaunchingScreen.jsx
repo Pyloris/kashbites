@@ -371,7 +371,7 @@ export const LaunchingScreen = () => {
                         Receive Launch Coupon on WhatsApp
                       </h3>
                       <p className="text-[11px] sm:text-xs text-brand-sand-light/80">
-                        Get <strong className="text-brand-gold-bright font-bold">20% OFF</strong> & priority harvest allocation on launch morning.
+                        Get <strong className="text-brand-gold-bright font-bold">10% OFF</strong> & priority harvest allocation on launch morning.
                       </p>
                     </div>
                   </div>
