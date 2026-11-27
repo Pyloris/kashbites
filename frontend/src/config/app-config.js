@@ -50,7 +50,7 @@ export const appConfig = {
 
   // Media & Asset Storage
   media: {
-    minioPublicUrl: import.meta.env.VITE_MINIO_PUBLIC_URL || (isLocal ? 'http://localhost:9000' : 'https://kashbites.com:9000'),
+    minioPublicUrl: import.meta.env.VITE_MINIO_PUBLIC_URL || (isLocal ? 'http://localhost:9000' : 'https://kashbites.com'),
     defaultProductImage: '/assets/aistudio/WhatsApp_Image_2026-11-03_at_6.27.20_PM__1__737dbd41.jpeg',
   },
 
